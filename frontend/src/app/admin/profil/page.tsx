@@ -215,7 +215,7 @@ export default function ProfilPage() {
     : "?";
 
   return (
-    <div>
+    <div className="admin-dark-page">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Profil</h1>
         <p className="mt-2 text-slate-600">Gestion des informations de votre compte</p>

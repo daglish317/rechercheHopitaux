@@ -65,7 +65,7 @@ export default function HospitalMap({
 
         const userIcon = L.divIcon({
           className: "user-marker",
-          html: `<div style="width:20px;height:20px;background:#22c55e;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>`,
+          html: `<div style="width:20px;height:20px;background:#0f766e;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(15,118,110,0.35)"></div>`,
           iconSize: [20, 20],
           iconAnchor: [10, 10],
         });
@@ -98,14 +98,14 @@ export default function HospitalMap({
 
         const defaultIcon = L.divIcon({
           className: "custom-marker",
-          html: `<div style="width:24px;height:24px;background:#3b82f6;border:2px solid white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;background:white;border-radius:50%"></div></div>`,
+          html: `<div style="width:24px;height:24px;background:#14b8a6;border:2px solid white;border-radius:50%;box-shadow:0 2px 4px rgba(15,118,110,0.28);display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;background:white;border-radius:50%"></div></div>`,
           iconSize: [24, 24],
           iconAnchor: [12, 12],
         });
 
         const selectedIcon = L.divIcon({
           className: "custom-marker-selected",
-          html: `<div style="width:32px;height:32px;background:#1d4ed8;border:3px solid white;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;background:white;border-radius:50%"></div></div>`,
+          html: `<div style="width:32px;height:32px;background:#0f766e;border:3px solid white;border-radius:50%;box-shadow:0 3px 6px rgba(15,118,110,0.35);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;background:white;border-radius:50%"></div></div>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         });
@@ -134,7 +134,7 @@ export default function HospitalMap({
             const coords = await calculateRoute(userPosition, selected);
             if (coords && !cancelled) {
               routeRef.current = L.polyline(coords, {
-                color: "#3b82f6",
+                color: "#0f766e",
                 weight: 5,
                 opacity: 0.7,
               }).addTo(map);

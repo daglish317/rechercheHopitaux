@@ -127,21 +127,21 @@ export default function MaladiesPage() {
  };
 
  return (
- <div>
+    <div className="admin-dark-page">
  <div className="mb-8">
- <h1 className="text-3xl font-bold text-slate-900">Maladies</h1>
- <p className="mt-2 text-slate-600">
+ <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Maladies</h1>
+ <p className="mt-2 text-slate-600 dark:text-slate-400">
  Gestion du catalogue des maladies
  </p>
  </div>
 
  {error && (
- <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg text-sm">
+ <div className="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm">
  <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
  <span className="flex-1">{error}</span>
  <button
  onClick={() => setError("")}
- className="text-slate-600 hover:text-slate-800:text-slate-200 transition-colors"
+ className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
  aria-label="Fermer"
  >
  <XIcon className="w-4 h-4" />
@@ -149,14 +149,14 @@ export default function MaladiesPage() {
  </div>
  )}
 
- <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+ <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
- <h2 className="text-xl font-semibold text-slate-900">
+ <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
  Liste des maladies ({maladies.length})
  </h2>
  <button
  onClick={handleOpenCreate}
- className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500:ring-blue-400 focus:ring-offset-2 transition-colors"
+ className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 transition-colors"
  >
  <PlusIcon className="w-4 h-4" />
  Ajouter une maladie
@@ -164,44 +164,44 @@ export default function MaladiesPage() {
  </div>
 
  {loading ? (
- <div className="text-center py-12 text-slate-600">
+ <div className="text-center py-12 text-slate-600 dark:text-slate-400">
  Chargement...
  </div>
  ) : maladies.length === 0 ? (
- <div className="text-center py-12 text-slate-600">
+ <div className="text-center py-12 text-slate-600 dark:text-slate-400">
  Aucune maladie enregistrée.
  </div>
  ) : (
  <div className="overflow-x-auto">
- <table className="min-w-full divide-y divide-slate-200">
- <thead className="bg-slate-50">
+ <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+ <thead className="bg-slate-50 dark:bg-slate-700/50">
  <tr>
- <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+ <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
  Nom
  </th>
- <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+ <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
  Actions
  </th>
  </tr>
  </thead>
- <tbody className="bg-white divide-y divide-slate-200">
+ <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
  {maladies.map((maladie) => (
- <tr key={maladie.id} className="hover:bg-slate-50 transition-colors">
- <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+ <tr key={maladie.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+ <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
  {maladie.nom}
  </td>
  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
  <div className="inline-flex items-center gap-4">
  <button
  onClick={() => handleOpenEdit(maladie)}
- className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800:text-blue-300 font-medium transition-colors"
+ className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
  >
  <EditIcon className="w-4 h-4" />
  Modifier
  </button>
  <button
  onClick={() => setDeleteModal(maladie)}
- className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800:text-red-300 font-medium transition-colors"
+ className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium transition-colors"
  >
  <TrashIcon className="w-4 h-4" />
  Supprimer
@@ -218,16 +218,16 @@ export default function MaladiesPage() {
 
  {showForm && (
  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
- <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" aria-hidden="true"></div>
- <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
- <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
- <h3 className="text-lg font-semibold text-slate-900">
+ <div className="absolute inset-0 bg-white dark:bg-slate-800/70 backdrop-blur-sm" aria-hidden="true"></div>
+ <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+ <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+ <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
  {editingMaladie ?"Modifier la maladie" :"Ajouter une maladie"}
  </h3>
  <button
  type="button"
  onClick={handleCloseForm}
- className="text-slate-600 hover:text-slate-800:text-slate-200 transition-colors"
+ className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
  aria-label="Fermer"
  >
  <XIcon className="w-5 h-5" />
@@ -236,7 +236,7 @@ export default function MaladiesPage() {
 
  <form onSubmit={handleSubmit} className="px-6 py-4">
  {formError && (
- <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+ <div className="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
  <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
  <span>{formError}</span>
  </div>
@@ -245,7 +245,7 @@ export default function MaladiesPage() {
  <div className="mb-4">
  <label
  htmlFor="nom"
- className="block text-sm font-medium text-slate-700 mb-1"
+ className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
  >
  Nom *
  </label>
@@ -255,7 +255,7 @@ export default function MaladiesPage() {
  value={nom}
  onChange={(e) => setNom(e.target.value)}
  required
- className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500:ring-blue-400 focus:border-blue-500:border-blue-400 transition-colors"
+ className="w-full px-3 py-2 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
  placeholder="Ex: Paludisme"
  autoFocus
  />
@@ -265,7 +265,7 @@ export default function MaladiesPage() {
  <button
  type="button"
  onClick={handleCloseForm}
- className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+ className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
  >
  Annuler
  </button>
@@ -288,16 +288,16 @@ export default function MaladiesPage() {
 
  {deleteModal && (
  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
- <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" aria-hidden="true"></div>
- <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
- <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
- <h3 className="text-lg font-semibold text-slate-900">
+ <div className="absolute inset-0 bg-white dark:bg-slate-800/70 backdrop-blur-sm" aria-hidden="true"></div>
+ <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+ <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+ <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
  Confirmer la suppression
  </h3>
  <button
  type="button"
  onClick={() => setDeleteModal(null)}
- className="text-slate-600 hover:text-slate-800:text-slate-200 transition-colors"
+ className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
  aria-label="Fermer"
  >
  <XIcon className="w-5 h-5" />
@@ -307,19 +307,19 @@ export default function MaladiesPage() {
  <div className="px-6 py-4">
  <div className="flex items-start gap-3">
  <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
- <AlertIcon className="w-5 h-5 text-red-600" />
+ <AlertIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
  </div>
- <p className="pt-2 text-sm text-slate-600">
+ <p className="pt-2 text-sm text-slate-600 dark:text-slate-400">
  Êtes-vous sûr de vouloir supprimer la maladie{""}
- <strong className="font-semibold text-slate-900">&laquo; {deleteModal.nom} &raquo;</strong> ?
+ <strong className="font-semibold text-slate-900 dark:text-slate-100">&laquo; {deleteModal.nom} &raquo;</strong> ?
  </p>
  </div>
  </div>
 
- <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+ <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
  <button
  onClick={() => setDeleteModal(null)}
- className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+ className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
  >
  Annuler
  </button>
@@ -338,5 +338,6 @@ export default function MaladiesPage() {
  </div>
  );
 }
+
 
 

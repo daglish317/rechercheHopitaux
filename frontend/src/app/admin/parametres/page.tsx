@@ -4,7 +4,7 @@ import { AlertIcon } from "@/components/Icons";
 
 export default function ParametresPage() {
   return (
-    <div>
+    <div className="admin-dark-page">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Paramètres</h1>
         <p className="mt-2 text-slate-600">

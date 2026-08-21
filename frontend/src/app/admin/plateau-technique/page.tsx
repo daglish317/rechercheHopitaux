@@ -224,9 +224,9 @@ export default function PlateauTechniquePage() {
 
   if (loading) {
     return (
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">Plateau technique</h1>
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 text-center py-12 text-slate-600">
+      <div className="admin-dark-page">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-8">Plateau technique</h1>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 text-center py-12 text-slate-600 dark:text-slate-400">
           Chargement...
         </div>
       </div>
@@ -234,7 +234,7 @@ export default function PlateauTechniquePage() {
   }
 
   return (
-    <div>
+    <div className="admin-dark-page">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Plateau technique</h1>
         <p className="mt-2 text-slate-600">

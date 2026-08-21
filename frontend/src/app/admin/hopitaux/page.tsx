@@ -215,17 +215,17 @@ export default function HopitauxPage() {
  };
 
  const inputClassName = (hasError?: string) =>
- `w-full px-4 py-3 border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40:ring-blue-400/40 focus:border-blue-500:border-blue-400 transition-colors ${
- hasError ?"border-red-500" :"border-slate-300"
+ `w-full px-4 py-3 border rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:focus:ring-blue-400/40 focus:border-blue-500 dark:focus:border-blue-400 transition-colors ${
+ hasError ?"border-red-500" :"border-slate-300 dark:border-slate-600"
  }`;
 
  if (loading) {
  return (
- <div>
- <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-8">Hôpitaux</h1>
- <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 py-12 flex flex-col items-center justify-center gap-3">
+    <div className="admin-dark-page">
+ <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-8">Hôpitaux</h1>
+ <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 py-12 flex flex-col items-center justify-center gap-3">
  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
- <span className="text-slate-700">Chargement...</span>
+ <span className="text-slate-700 dark:text-slate-300">Chargement...</span>
  </div>
  </div>
  );
@@ -234,14 +234,14 @@ export default function HopitauxPage() {
  return (
  <div>
  <div className="mb-8">
- <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Hôpitaux</h1>
- <p className="mt-2 text-sm sm:text-base text-slate-600">
+ <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Hôpitaux</h1>
+ <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
  Gestion des hôpitaux enregistrés
  </p>
  </div>
 
  {error && (
- <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-3">
+ <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-3">
  <span className="flex items-center gap-2">
  <AlertIcon className="w-5 h-5 shrink-0" />
  {error}
@@ -257,9 +257,9 @@ export default function HopitauxPage() {
  )}
 
  {view ==="list" && (
- <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
- <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-6 border-b border-slate-200">
- <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
+ <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+ <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+ <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
  Liste des hôpitaux ({hopitaux.length})
  </h2>
  <button
@@ -272,38 +272,38 @@ export default function HopitauxPage() {
  </div>
 
  {hopitaux.length === 0 ? (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-slate-600">
+ <div className="flex flex-col items-center justify-center py-16 px-4 text-slate-600 dark:text-slate-400">
  <HospitalIcon className="w-12 h-12 text-slate-300 mb-4" />
  Aucun hôpital enregistré.
  </div>
  ) : (
  <div className="overflow-x-auto">
- <table className="min-w-full divide-y divide-slate-200">
- <thead className="bg-slate-50">
+ <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+ <thead className="bg-slate-50 dark:bg-slate-700/50">
  <tr>
- <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 uppercase tracking-wider">Nom</th>
- <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 uppercase tracking-wider">Type</th>
- <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 uppercase tracking-wider hidden md:table-cell">Adresse</th>
- <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 uppercase tracking-wider hidden lg:table-cell">Téléphone</th>
- <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 uppercase tracking-wider">Statut</th>
- <th className="px-4 py-3 text-right text-xs font-semibold text-slate-800 uppercase tracking-wider">Actions</th>
+ <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Nom</th>
+ <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Type</th>
+ <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider hidden md:table-cell">Adresse</th>
+ <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider hidden lg:table-cell">Téléphone</th>
+ <th className="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Statut</th>
+ <th className="px-4 py-3 text-right text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Actions</th>
  </tr>
  </thead>
- <tbody className="bg-white divide-y divide-slate-200">
+ <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
  {hopitaux.map((h) => (
- <tr key={h.id} className="hover:bg-slate-50 transition-colors">
- <td className="px-4 py-3 text-sm text-slate-900 font-medium">{h.nom}</td>
- <td className="px-4 py-3 text-sm text-slate-700">{h.type_hopital_nom}</td>
- <td className="px-4 py-3 text-sm text-slate-700 hidden md:table-cell max-w-xs truncate">{h.adresse}</td>
- <td className="px-4 py-3 text-sm text-slate-700 hidden lg:table-cell">
+ <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+ <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 font-medium">{h.nom}</td>
+ <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{h.type_hopital_nom}</td>
+ <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hidden md:table-cell max-w-xs truncate">{h.adresse}</td>
+ <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hidden lg:table-cell">
  {h.telephone ||"—"}
  </td>
  <td className="px-4 py-3 text-sm">
  <span
  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${
  h.statut ==="ACTIF"
- ?"bg-emerald-100 text-emerald-600"
- :"bg-red-100 text-red-600"
+ ?"bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+ :"bg-red-100 text-red-600 dark:text-red-400"
  }`}
  >
  <CheckCircleIcon className="w-3.5 h-3.5" />
@@ -315,14 +315,14 @@ export default function HopitauxPage() {
  <button
  onClick={() => handleViewDetail(h)}
  title="Voir"
- className="px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50:bg-blue-500/10 rounded-md transition-colors"
+ className="px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-500/10:bg-blue-500/10 rounded-md transition-colors"
  >
  Voir
  </button>
  <button
  onClick={() => handleViewEdit(h)}
  title="Modifier"
- className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100:bg-slate-700 rounded-md transition-colors"
+ className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
  >
  <EditIcon className="w-4 h-4" />
  Modifier
@@ -336,8 +336,8 @@ export default function HopitauxPage() {
  }
  className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
  h.statut ==="ACTIF"
- ?"text-red-600 hover:bg-red-50:bg-red-500/10"
- :"text-emerald-600 hover:bg-emerald-50:bg-emerald-500/10"
+ ?"text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-950/40:bg-red-500/10"
+ :"text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50:bg-emerald-500/10"
  }`}
  >
  {h.statut ==="ACTIF" ? (
@@ -364,14 +364,14 @@ export default function HopitauxPage() {
  )}
 
  {(view ==="create" || view ==="edit") && (
- <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+ <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
- <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
+ <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
  {view ==="create" ?"Ajouter un hôpital" :"Modifier l&apos;hôpital"}
  </h2>
  <button
  onClick={handleViewList}
- className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-blue-600:text-blue-400 transition-colors"
+ className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400:text-blue-400 transition-colors"
  >
  <ChevronLeftIcon className="w-4 h-4" />
  Retour à la liste
@@ -379,7 +379,7 @@ export default function HopitauxPage() {
  </div>
 
  {formErrors.general && (
- <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+ <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
  <AlertIcon className="w-5 h-5 shrink-0" />
  {formErrors.general}
  </div>
@@ -387,7 +387,7 @@ export default function HopitauxPage() {
 
  <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
  <div>
- <label htmlFor="nom" className="block text-sm font-semibold text-slate-800 mb-1.5">Nom *</label>
+ <label htmlFor="nom" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Nom *</label>
  <input
  id="nom"
  type="text"
@@ -397,7 +397,7 @@ export default function HopitauxPage() {
  placeholder="Nom de l'hôpital"
  />
  {formErrors.nom && (
- <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+ <p className="mt-1.5 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
  <AlertIcon className="w-4 h-4" />
  {formErrors.nom}
  </p>
@@ -405,7 +405,7 @@ export default function HopitauxPage() {
  </div>
 
  <div>
- <label htmlFor="type_hopital" className="block text-sm font-semibold text-slate-800 mb-1.5">Type d&apos;hôpital *</label>
+ <label htmlFor="type_hopital" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Type d&apos;hôpital *</label>
  <select
  id="type_hopital"
  value={formData.type_hopital}
@@ -420,7 +420,7 @@ export default function HopitauxPage() {
  ))}
  </select>
  {formErrors.type_hopital && (
- <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+ <p className="mt-1.5 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
  <AlertIcon className="w-4 h-4" />
  {formErrors.type_hopital}
  </p>
@@ -428,7 +428,7 @@ export default function HopitauxPage() {
  </div>
 
  <div>
- <label htmlFor="adresse" className="block text-sm font-semibold text-slate-800 mb-1.5">Adresse *</label>
+ <label htmlFor="adresse" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Adresse *</label>
  <input
  id="adresse"
  type="text"
@@ -438,7 +438,7 @@ export default function HopitauxPage() {
  placeholder="Adresse complète"
  />
  {formErrors.adresse && (
- <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+ <p className="mt-1.5 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
  <AlertIcon className="w-4 h-4" />
  {formErrors.adresse}
  </p>
@@ -446,7 +446,7 @@ export default function HopitauxPage() {
  </div>
 
  <div>
- <label htmlFor="telephone" className="block text-sm font-semibold text-slate-800 mb-1.5">Téléphone</label>
+ <label htmlFor="telephone" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Téléphone</label>
  <input
  id="telephone"
  type="text"
@@ -459,7 +459,7 @@ export default function HopitauxPage() {
 
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
  <div>
- <label htmlFor="latitude" className="block text-sm font-semibold text-slate-800 mb-1.5">Latitude</label>
+ <label htmlFor="latitude" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Latitude</label>
  <input
  id="latitude"
  type="number"
@@ -470,14 +470,14 @@ export default function HopitauxPage() {
  placeholder="-90 à 90"
  />
  {formErrors.latitude && (
- <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+ <p className="mt-1.5 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
  <AlertIcon className="w-4 h-4" />
  {formErrors.latitude}
  </p>
  )}
  </div>
  <div>
- <label htmlFor="longitude" className="block text-sm font-semibold text-slate-800 mb-1.5">Longitude</label>
+ <label htmlFor="longitude" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Longitude</label>
  <input
  id="longitude"
  type="number"
@@ -488,7 +488,7 @@ export default function HopitauxPage() {
  placeholder="-180 à 180"
  />
  {formErrors.longitude && (
- <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+ <p className="mt-1.5 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
  <AlertIcon className="w-4 h-4" />
  {formErrors.longitude}
  </p>
@@ -497,7 +497,7 @@ export default function HopitauxPage() {
  </div>
 
  <div>
- <label htmlFor="statut" className="block text-sm font-semibold text-slate-800 mb-1.5">Statut *</label>
+ <label htmlFor="statut" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Statut *</label>
  <select
  id="statut"
  value={formData.statut}
@@ -522,7 +522,7 @@ export default function HopitauxPage() {
  <button
  type="button"
  onClick={handleViewList}
- className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+ className="px-6 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
  >
  Annuler
  </button>
@@ -532,9 +532,9 @@ export default function HopitauxPage() {
  )}
 
  {view ==="detail" && selectedHopital && (
- <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+ <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
- <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
+ <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
  Fiche de l&apos;hôpital
  </h2>
  <div className="flex flex-wrap gap-3">
@@ -547,7 +547,7 @@ export default function HopitauxPage() {
  </button>
  <button
  onClick={handleViewList}
- className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+ className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
  >
  <ChevronLeftIcon className="w-4 h-4" />
  Retour à la liste
@@ -555,46 +555,46 @@ export default function HopitauxPage() {
  </div>
  </div>
 
- <div className="flex items-start gap-4 pb-6 mb-6 border-b border-slate-200">
- <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-blue-50 shrink-0">
- <HospitalIcon className="w-6 h-6 text-blue-600" />
+ <div className="flex items-start gap-4 pb-6 mb-6 border-b border-slate-200 dark:border-slate-700">
+ <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-500/10 shrink-0">
+ <HospitalIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
  </div>
  <div>
- <p className="text-xl font-bold text-slate-900">{selectedHopital.nom}</p>
- <p className="text-sm text-slate-600 mt-0.5">{selectedHopital.type_hopital_nom}</p>
+ <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{selectedHopital.nom}</p>
+ <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">{selectedHopital.type_hopital_nom}</p>
  </div>
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  <div className="flex items-start gap-3">
- <MapPinIcon className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+ <MapPinIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
  <div>
- <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Adresse</h3>
- <p className="text-slate-900">{selectedHopital.adresse}</p>
+ <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Adresse</h3>
+ <p className="text-slate-900 dark:text-slate-100">{selectedHopital.adresse}</p>
  </div>
  </div>
  <div className="flex items-start gap-3">
- <PhoneIcon className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+ <PhoneIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
  <div>
- <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Téléphone</h3>
- <p className="text-slate-900">{selectedHopital.telephone ||"Non renseigné"}</p>
+ <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Téléphone</h3>
+ <p className="text-slate-900 dark:text-slate-100">{selectedHopital.telephone ||"Non renseigné"}</p>
  </div>
  </div>
  <div>
- <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Latitude</h3>
- <p className="text-slate-900">{selectedHopital.latitude}</p>
+ <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Latitude</h3>
+ <p className="text-slate-900 dark:text-slate-100">{selectedHopital.latitude}</p>
  </div>
  <div>
- <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Longitude</h3>
- <p className="text-slate-900">{selectedHopital.longitude}</p>
+ <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Longitude</h3>
+ <p className="text-slate-900 dark:text-slate-100">{selectedHopital.longitude}</p>
  </div>
  <div>
- <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Statut</h3>
+ <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">Statut</h3>
  <span
  className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${
  selectedHopital.statut ==="ACTIF"
- ?"bg-emerald-100 text-emerald-600"
- :"bg-red-100 text-red-600"
+ ?"bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+ :"bg-red-100 text-red-600 dark:text-red-400"
  }`}
  >
  {selectedHopital.statut ==="ACTIF" ? (
@@ -611,20 +611,20 @@ export default function HopitauxPage() {
 
  {statusModal && (
  <div
- className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/70 backdrop-blur-sm animate-[fadeIn_150ms_ease-out]"
+ className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white dark:bg-slate-800/70 backdrop-blur-sm animate-[fadeIn_150ms_ease-out]"
  role="dialog"
  aria-modal="true"
  >
  <div className="absolute inset-0" onClick={() => !toggling && setStatusModal(null)}></div>
- <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 animate-[scaleIn_150ms_ease-out]">
- <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
- <h3 className="text-lg font-semibold text-slate-900">
+ <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 animate-[scaleIn_150ms_ease-out]">
+ <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+ <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
  {statusModal.action ==="ACTIF" ?"Activer" :"Désactiver"} l&apos;hôpital
  </h3>
  <button
  onClick={() => setStatusModal(null)}
  disabled={toggling}
- className="text-slate-600 hover:text-slate-800:text-slate-200 transition-colors disabled:opacity-50"
+ className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
  aria-label="Fermer"
  >
  <XIcon className="w-5 h-5" />
@@ -632,21 +632,21 @@ export default function HopitauxPage() {
  </div>
  <div className="px-6 py-5 flex items-start gap-3">
  {statusModal.action ==="ACTIF" ? (
- <CheckCircleIcon className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+ <CheckCircleIcon className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
  ) : (
- <AlertIcon className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+ <AlertIcon className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
  )}
- <p className="text-slate-700">
+ <p className="text-slate-700 dark:text-slate-300">
  {statusModal.action ==="ACTIF"
  ? `Voulez-vous activer l'hôpital « ${statusModal.hopital.nom} » ?`
  : `Voulez-vous désactiver l'hôpital « ${statusModal.hopital.nom} » ?`}
  </p>
  </div>
- <div className="px-6 py-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row justify-end gap-3">
+ <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex flex-col-reverse sm:flex-row justify-end gap-3">
  <button
  onClick={() => setStatusModal(null)}
  disabled={toggling}
- className="px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+ className="px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50"
  >
  Annuler
  </button>
@@ -683,5 +683,6 @@ export default function HopitauxPage() {
  </div>
  );
 }
+
 
 

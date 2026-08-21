@@ -91,10 +91,12 @@ export default function Home() {
         onSearchChange={handleSearchChange}
         onLocateMe={handleLocateMe}
         hasPosition={userPosition !== null}
+        resultCount={results.length}
+        hasSearched={hasSearched}
       />
 
-      <main className="flex-1 px-3 sm:px-5 lg:px-7 py-4 overflow-hidden">
-        <section className="mx-auto grid h-[calc(100vh-96px)] min-h-[720px] max-w-[1600px] grid-cols-1 gap-4 xl:grid-cols-[390px_1fr]">
+      <main className="h-[calc(100vh-80px)] overflow-hidden px-3 py-4 sm:px-5 lg:px-7">
+        <section className="mx-auto grid h-full max-w-[1680px] grid-cols-1 gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
           <Sidebar
             results={results}
             selectedId={selectedId}
@@ -103,7 +105,7 @@ export default function Home() {
             hasSearched={hasSearched}
           />
 
-          <div className="relative min-h-[520px] overflow-hidden rounded-2xl border border-white/70 bg-white/90 shadow-xl shadow-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900/90 dark:shadow-black/30">
+          <div className="relative h-full min-h-0 overflow-hidden rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/10">
             <HospitalMap
               hospitals={results}
               selectedId={selectedId}

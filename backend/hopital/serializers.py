@@ -30,6 +30,8 @@ class HopitalSerializer(serializers.ModelSerializer):
         return value.strip()
 
     def validate_latitude(self, value):
+        if value is None or value == "":
+            return None
         try:
             lat = float(value)
             if lat < -90 or lat > 90:
@@ -41,6 +43,8 @@ class HopitalSerializer(serializers.ModelSerializer):
         return value
 
     def validate_longitude(self, value):
+        if value is None or value == "":
+            return None
         try:
             lng = float(value)
             if lng < -180 or lng > 180:
