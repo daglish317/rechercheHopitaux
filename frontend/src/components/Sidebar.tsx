@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { HopitalSearchResult } from "@/lib/public";
+import { HospitalIcon, MapPinIcon, PhoneIcon, SearchIcon } from "@/components/Icons";
 
 interface SidebarProps {
   results: HopitalSearchResult[];
@@ -9,6 +10,23 @@ interface SidebarProps {
   onSelect: (hospital: HopitalSearchResult) => void;
   loading: boolean;
   hasSearched: boolean;
+}
+
+function EmptyState({ hasSearched }: { hasSearched: boolean }) {
+  return (
+    <div className="flex min-h-[260px] items-center justify-center px-6 text-center">
+      <div className="max-w-xs">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+          <SearchIcon className="h-6 w-6" />
+        </div>
+        <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          {hasSearched
+            ? "Aucun resultat."
+            : "Utilisez la barre de recherche pour afficher les hopitaux."}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function Sidebar({
@@ -20,93 +38,80 @@ export default function Sidebar({
 }: SidebarProps) {
   if (loading) {
     return (
-      <div className="w-1/3 border-r border-gray-200 bg-white overflow-y-auto">
-        <div className="p-4">
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-2/3" />
-              </div>
-            ))}
-          </div>
+      <aside className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/70 bg-white/92 shadow-xl shadow-slate-200/70 dark:border-slate-700/80 dark:bg-slate-900/92 dark:shadow-black/20">
+        <div className="space-y-3 p-4">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="animate-pulse rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/70"
+            >
+              <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="mt-3 h-3 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="mt-2 h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
+            </div>
+          ))}
         </div>
-      </div>
-    );
-  }
-
-  if (!hasSearched) {
-    return (
-      <div className="w-1/3 border-r border-gray-200 bg-white flex items-center justify-center">
-        <div className="text-center text-gray-400 px-6">
-          <svg
-            className="w-12 h-12 mx-auto mb-3 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <p className="text-sm">
-            Recherchez un hôpital par nom, spécialité, examen ou plateau technique
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (results.length === 0) {
-    return (
-      <div className="w-1/3 border-r border-gray-200 bg-white flex items-center justify-center">
-        <div className="text-center text-gray-500 px-6">
-          <p className="text-sm">
-            Aucun hôpital ne correspond à votre recherche.
-          </p>
-        </div>
-      </div>
+      </aside>
     );
   }
 
   return (
-    <div className="w-1/3 border-r border-gray-200 bg-white overflow-y-auto">
-      <div className="p-4">
-        <p className="text-xs text-gray-400 mb-3">
-          {results.length} résultat{results.length > 1 ? "s" : ""}
-        </p>
-        <div className="space-y-3">
-          {results.map((hopital) => (
-            <div
-              key={hopital.id}
-              onClick={() => onSelect(hopital)}
-              className={`bg-gray-50 rounded-lg p-4 cursor-pointer transition-all hover:bg-blue-50 hover:border-blue-200 border border-transparent ${
-                selectedId === hopital.id
-                  ? "bg-blue-50 border-blue-400 ring-1 ring-blue-200"
-                  : ""
-              }`}
-            >
-              <h3 className="font-semibold text-gray-900 text-sm">{hopital.nom}</h3>
-              <p className="text-xs text-gray-500 mt-1">{hopital.type_hopital_nom}</p>
-              <p className="text-xs text-gray-600 mt-1">{hopital.adresse}</p>
-              {hopital.telephone && (
-                <p className="text-xs text-gray-500 mt-1">{hopital.telephone}</p>
-              )}
-              <Link
-                href={`/hopital/${hopital.id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="inline-block mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Voir les détails
-              </Link>
-            </div>
-          ))}
+    <aside className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/70 bg-white/92 shadow-xl shadow-slate-200/70 dark:border-slate-700/80 dark:bg-slate-900/92 dark:shadow-black/20">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+        <h2 className="text-sm font-bold text-slate-950 dark:text-white">
+          {hasSearched ? `${results.length} resultats` : "Resultats"}
+        </h2>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300">
+          <HospitalIcon className="h-4 w-4" />
         </div>
       </div>
-    </div>
+
+      {results.length === 0 ? (
+        <EmptyState hasSearched={hasSearched} />
+      ) : (
+        <div className="max-h-[44vh] space-y-3 overflow-y-auto p-4 xl:max-h-none xl:h-[calc(100%-65px)]">
+          {results.map((hopital) => {
+            const isSelected = selectedId === hopital.id;
+            return (
+              <article
+                key={hopital.id}
+                onClick={() => onSelect(hopital)}
+                className={`cursor-pointer rounded-xl border p-4 transition-all ${
+                  isSelected
+                    ? "border-teal-300 bg-teal-50 shadow-md shadow-teal-900/5 ring-2 ring-teal-500/15 dark:border-teal-800 dark:bg-teal-950/40"
+                    : "border-slate-200 bg-white hover:border-teal-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-teal-800"
+                }`}
+              >
+                <h3 className="truncate text-sm font-bold text-slate-950 dark:text-white">
+                  {hopital.nom}
+                </h3>
+                <p className="mt-1 text-xs font-medium text-teal-700 dark:text-teal-300">
+                  {hopital.type_hopital_nom}
+                </p>
+                <div className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                  <p className="flex items-start gap-2">
+                    <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                    <span>{hopital.adresse}</span>
+                  </p>
+                  {hopital.telephone && (
+                    <p className="flex items-center gap-2">
+                      <PhoneIcon className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span>{hopital.telephone}</span>
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href={`/hopital/${hopital.id}`}
+                  onClick={(event) => event.stopPropagation()}
+                  className="mt-4 inline-flex rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-700 dark:bg-white dark:text-slate-950 dark:hover:bg-teal-200"
+                >
+                  Details
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </aside>
   );
 }

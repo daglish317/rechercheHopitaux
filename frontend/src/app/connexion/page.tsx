@@ -4,6 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  HospitalIcon,
+  LoginIcon,
+  MailIcon,
+  LockIcon,
+  AlertIcon,
+} from "@/components/Icons";
 
 export default function ConnexionPage() {
   const [email, setEmail] = useState("");
@@ -27,75 +34,105 @@ export default function ConnexionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
-      <main className="max-w-md mx-auto px-4 py-12">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Connexion
-          </h1>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">
-              {error}
+      <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2">
+              <HospitalIcon className="w-8 h-8 text-blue-600" />
+              <span className="text-3xl font-bold text-blue-600 tracking-tight">
+                Hopital
+              </span>
             </div>
-          )}
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
+          <div className="bg-white rounded-2xl shadow-lg shadow-slate-200 border border-slate-100 p-6 sm:p-8">
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                <LoginIcon className="w-7 h-7 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 text-center">
+                Connexion
+              </h1>
+              <p className="mt-1 text-sm text-slate-600 text-center">
+                Accédez à votre espace personnel
+              </p>
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-600 p-3 rounded-xl mb-6 text-sm">
+                <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
+                  Email
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <MailIcon className="w-5 h-5 text-slate-400" />
+                  </span>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full pl-11 pr-4 py-3 text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors"
+                    placeholder="votre@email.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="motDePasse"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <LockIcon className="w-5 h-5 text-slate-400" />
+                  </span>
+                  <input
+                    id="motDePasse"
+                    type="password"
+                    value={motDePasse}
+                    onChange={(e) => setMotDePasse(e.target.value)}
+                    required
+                    className="w-full pl-11 pr-4 py-3 text-slate-900 placeholder:text-slate-400 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 px-4 rounded-xl font-semibold shadow-md shadow-blue-600/25 hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="votre@email.com"
-              />
-            </div>
+                {loading ? "Connexion..." : "Se connecter"}
+              </button>
+            </form>
 
-            <div>
-              <label
-                htmlFor="motDePasse"
-                className="block text-sm font-medium text-gray-700 mb-1"
+            <p className="mt-6 text-center text-sm text-slate-600">
+              Pas encore de compte ?{" "}
+              <Link
+                href="/inscription"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                Mot de passe
-              </label>
-              <input
-                id="motDePasse"
-                type="password"
-                value={motDePasse}
-                onChange={(e) => setMotDePasse(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? "Connexion..." : "Se connecter"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Pas encore de compte ?{" "}
-            <Link
-              href="/inscription"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Créer un compte
-            </Link>
-          </p>
+                Créer un compte
+              </Link>
+            </p>
+          </div>
         </div>
       </main>
     </div>

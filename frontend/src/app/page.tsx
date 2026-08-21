@@ -22,9 +22,7 @@ export default function Home() {
         (position) => {
           setUserPosition([position.coords.latitude, position.coords.longitude]);
         },
-        () => {
-          // Geolocation denied, continue without it
-        }
+        () => {}
       );
     }
   }, []);
@@ -41,9 +39,7 @@ export default function Home() {
           setCenterOnUser(true);
           setTimeout(() => setCenterOnUser(false), 100);
         },
-        () => {
-          // Geolocation denied
-        }
+        () => {}
       );
     }
   }, []);
@@ -89,7 +85,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen app-shell-bg flex flex-col">
       <PublicHeader
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
@@ -97,25 +93,27 @@ export default function Home() {
         hasPosition={userPosition !== null}
       />
 
-      <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
-        <Sidebar
-          results={results}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          loading={loading}
-          hasSearched={hasSearched}
-        />
-
-        <div className="flex-1 relative">
-          <HospitalMap
-            hospitals={results}
+      <main className="flex-1 px-3 sm:px-5 lg:px-7 py-4 overflow-hidden">
+        <section className="mx-auto grid h-[calc(100vh-96px)] min-h-[720px] max-w-[1600px] grid-cols-1 gap-4 xl:grid-cols-[390px_1fr]">
+          <Sidebar
+            results={results}
             selectedId={selectedId}
             onSelect={handleSelect}
-            userPosition={userPosition}
-            centerOnUser={centerOnUser}
+            loading={loading}
+            hasSearched={hasSearched}
           />
-        </div>
-      </div>
+
+          <div className="relative min-h-[520px] overflow-hidden rounded-2xl border border-white/70 bg-white/90 shadow-xl shadow-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900/90 dark:shadow-black/30">
+            <HospitalMap
+              hospitals={results}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              userPosition={userPosition}
+              centerOnUser={centerOnUser}
+            />
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser
+from authentication.permissions import IsAdministrateur
 from django.shortcuts import get_object_or_404
 
 from .models import ExamenMedical, HopitalExamen
@@ -9,7 +9,7 @@ from .serializers import ExamenMedicalSerializer, HopitalExamenSerializer
 
 
 class ExamenMedicalListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get(self, request):
         examens = ExamenMedical.objects.all()
@@ -25,7 +25,7 @@ class ExamenMedicalListView(APIView):
 
 
 class ExamenMedicalDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get_object(self, pk):
         return get_object_or_404(ExamenMedical, pk=pk)
@@ -62,7 +62,7 @@ class ExamenMedicalDetailView(APIView):
 
 
 class HopitalExamenListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get(self, request):
         associations = HopitalExamen.objects.select_related("hopital", "examen").all()
@@ -78,7 +78,7 @@ class HopitalExamenListView(APIView):
 
 
 class HopitalExamenDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get_object(self, pk):
         return get_object_or_404(HopitalExamen, pk=pk)

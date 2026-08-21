@@ -12,4 +12,7 @@ urlpatterns = [
     path("api/examens/", include("examen.urls")),
     path("api/plateau-technique/", include("plateau.urls")),
     path("api/", include("public.urls")),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

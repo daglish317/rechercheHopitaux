@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser
+from authentication.permissions import IsAdministrateur
 from django.shortcuts import get_object_or_404
 
 from .models import PlateauTechnique, HopitalPlateauTechnique
@@ -12,7 +12,7 @@ from .serializers import (
 
 
 class PlateauTechniqueListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get(self, request):
         plateaux = PlateauTechnique.objects.all()
@@ -28,7 +28,7 @@ class PlateauTechniqueListView(APIView):
 
 
 class PlateauTechniqueDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get_object(self, pk):
         return get_object_or_404(PlateauTechnique, pk=pk)
@@ -65,7 +65,7 @@ class PlateauTechniqueDetailView(APIView):
 
 
 class HopitalPlateauTechniqueListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get(self, request):
         associations = HopitalPlateauTechnique.objects.select_related(
@@ -83,7 +83,7 @@ class HopitalPlateauTechniqueListView(APIView):
 
 
 class HopitalPlateauTechniqueDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get_object(self, pk):
         return get_object_or_404(HopitalPlateauTechnique, pk=pk)

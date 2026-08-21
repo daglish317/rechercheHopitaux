@@ -3,6 +3,17 @@
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { authAPI } from "@/lib/api";
+import {
+  CameraIcon,
+  TrashIcon,
+  EditIcon,
+  LockIcon,
+  UserIcon,
+  MailIcon,
+  CheckCircleIcon,
+  XIcon,
+  AlertIcon,
+} from "@/components/Icons";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 const MEDIA_BASE_URL = API_BASE_URL.replace("/api", "");
@@ -206,28 +217,33 @@ export default function ProfilPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Profil</h1>
-        <p className="mt-2 text-gray-600">Gestion des informations de votre compte</p>
+        <h1 className="text-3xl font-bold text-slate-900">Profil</h1>
+        <p className="mt-2 text-slate-600">Gestion des informations de votre compte</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
             <div className="flex flex-col items-center">
-              <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
+              <div
+                className="relative group cursor-pointer rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
+                onClick={handlePhotoClick}
+                title="Modifier la photo de profil"
+              >
                 {photoUrl ? (
                   <img
                     src={photoUrl}
                     alt="Photo de profil"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                    className="w-32 h-32 sm:w-36 sm:h-36 rounded-full object-cover ring-4 ring-white shadow-md"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center border-4 border-gray-200">
-                    <span className="text-3xl font-bold text-white">{initials}</span>
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-blue-600 flex items-center justify-center ring-4 ring-white shadow-md">
+                    <span className="text-4xl font-bold text-white">{initials}</span>
                   </div>
                 )}
-                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-white text-xs font-medium">
+                <div className="absolute inset-0 rounded-full bg-white/75 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-out dark:bg-slate-900/60">
+                  <CameraIcon className="w-7 h-7 text-white" />
+                  <span className="mt-1.5 text-xs font-medium text-white">
                     {uploadingPhoto ? "Envoi..." : "Modifier"}
                   </span>
                 </div>
@@ -242,88 +258,100 @@ export default function ProfilPage() {
               />
 
               {photoError && (
-                <p className="mt-2 text-sm text-red-600 text-center">{photoError}</p>
+                <p className="mt-3 flex items-center gap-1.5 text-sm text-red-600 text-center">
+                  <AlertIcon className="w-4 h-4 shrink-0" />
+                  {photoError}
+                </p>
               )}
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-5 flex items-center gap-3">
                 <button
                   onClick={handlePhotoClick}
                   disabled={uploadingPhoto}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none"
                 >
+                  <CameraIcon className="w-4 h-4" />
                   {user?.photo ? "Remplacer" : "Ajouter une photo"}
                 </button>
                 {user?.photo && (
                   <>
-                    <span className="text-gray-300">|</span>
+                    <span className="h-5 w-px bg-slate-200" />
                     <button
                       onClick={() => setDeletePhotoModal(true)}
-                      className="text-sm text-red-600 hover:text-red-800 font-medium"
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                     >
+                      <TrashIcon className="w-4 h-4" />
                       Supprimer
                     </button>
                   </>
                 )}
               </div>
 
-              <h2 className="mt-4 text-xl font-semibold text-gray-900">{user?.nom}</h2>
-              <p className="text-sm text-gray-500">{user?.email}</p>
-              <span className="mt-2 inline-block px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+              <h2 className="mt-5 text-xl font-semibold text-slate-900 text-center">{user?.nom}</h2>
+              <p className="mt-1 text-sm text-slate-600">{user?.email}</p>
+              <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full">
+                <CheckCircleIcon className="w-3.5 h-3.5" />
                 {user?.role === "ADMINISTRATEUR" ? "Administrateur" : "Utilisateur"}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 mb-6">
+              <UserIcon className="w-5 h-5 text-blue-600" />
               Informations personnelles
             </h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nom</label>
                 {editingNom ? (
                   <div>
                     <input
                       type="text"
                       value={nomValue}
                       onChange={(e) => setNomValue(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-colors"
+                      placeholder="Votre nom"
                       autoFocus
                     />
                     {nomError && (
-                      <p className="mt-1 text-sm text-red-600">{nomError}</p>
+                      <p className="mt-1.5 flex items-center gap-1.5 text-sm text-red-600">
+                        <AlertIcon className="w-4 h-4 shrink-0" />
+                        {nomError}
+                      </p>
                     )}
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-3 flex gap-2">
                       <button
                         onClick={handleSaveNom}
                         disabled={savingNom || !nomValue.trim()}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         {savingNom ? "Enregistrement..." : "Enregistrer"}
                       </button>
                       <button
                         onClick={handleCancelEditNom}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                        className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                       >
                         Annuler
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <input
                       type="text"
                       value={user?.nom || ""}
                       readOnly
-                      className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-900"
+                      className="w-full min-w-0 px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 cursor-default"
                     />
                     <button
                       onClick={handleStartEditNom}
-                      className="ml-3 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg whitespace-nowrap transition-colors"
                     >
+                      <EditIcon className="w-4 h-4" />
                       Modifier
                     </button>
                   </div>
@@ -331,7 +359,7 @@ export default function ProfilPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Adresse email
                 </label>
                 {editingEmail ? (
@@ -340,40 +368,48 @@ export default function ProfilPage() {
                       type="email"
                       value={emailValue}
                       onChange={(e) => setEmailValue(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-colors"
+                      placeholder="votre@email.com"
                       autoFocus
                     />
                     {emailError && (
-                      <p className="mt-1 text-sm text-red-600">{emailError}</p>
+                      <p className="mt-1.5 flex items-center gap-1.5 text-sm text-red-600">
+                        <AlertIcon className="w-4 h-4 shrink-0" />
+                        {emailError}
+                      </p>
                     )}
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-3 flex gap-2">
                       <button
                         onClick={handleSaveEmail}
                         disabled={savingEmail || !emailValue.trim()}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         {savingEmail ? "Enregistrement..." : "Enregistrer"}
                       </button>
                       <button
                         onClick={handleCancelEditEmail}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                        className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                       >
                         Annuler
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <input
-                      type="email"
-                      value={user?.email || ""}
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-900"
-                    />
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-full min-w-0">
+                      <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none" />
+                      <input
+                        type="email"
+                        value={user?.email || ""}
+                        readOnly
+                        className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 cursor-default"
+                      />
+                    </div>
                     <button
                       onClick={handleStartEditEmail}
-                      className="ml-3 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg whitespace-nowrap transition-colors"
                     >
+                      <EditIcon className="w-4 h-4" />
                       Modifier
                     </button>
                   </div>
@@ -381,26 +417,30 @@ export default function ProfilPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Rôle</label>
                 <input
                   type="text"
                   value={user?.role === "ADMINISTRATEUR" ? "Administrateur" : "Utilisateur"}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 cursor-not-allowed"
                 />
-                <p className="mt-1 text-xs text-gray-400">Le rôle ne peut pas être modifié.</p>
+                <p className="mt-1.5 text-xs text-slate-600">Le rôle ne peut pas être modifié.</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Mot de passe</h3>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <LockIcon className="w-5 h-5 text-blue-600" />
+                Mot de passe
+              </h3>
               {!showPasswordForm && (
                 <button
                   onClick={() => setShowPasswordForm(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 transition-colors"
                 >
+                  <EditIcon className="w-4 h-4" />
                   Modifier le mot de passe
                 </button>
               )}
@@ -409,14 +449,15 @@ export default function ProfilPage() {
             {showPasswordForm ? (
               <form onSubmit={handleChangePassword}>
                 {passwordError && (
-                  <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                    {passwordError}
+                  <div className="mb-5 flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-lg text-sm">
+                    <AlertIcon className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{passwordError}</span>
                   </div>
                 )}
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
                       Ancien mot de passe
                     </label>
                     <input
@@ -424,11 +465,11 @@ export default function ProfilPage() {
                       value={ancienMdp}
                       onChange={(e) => setAncienMdp(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
                       Nouveau mot de passe
                     </label>
                     <input
@@ -436,11 +477,11 @@ export default function ProfilPage() {
                       value={nouveauMdp}
                       onChange={(e) => setNouveauMdp(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
                       Confirmer le nouveau mot de passe
                     </label>
                     <input
@@ -448,16 +489,16 @@ export default function ProfilPage() {
                       value={confirmationMdp}
                       onChange={(e) => setConfirmationMdp(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-colors"
                     />
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-6 flex gap-2">
                   <button
                     type="submit"
                     disabled={savingPassword || !ancienMdp || !nouveauMdp || !confirmationMdp}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                   >
                     {savingPassword ? "Enregistrement..." : "Enregistrer"}
                   </button>
@@ -470,14 +511,14 @@ export default function ProfilPage() {
                       setConfirmationMdp("");
                       setPasswordError("");
                     }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     Annuler
                   </button>
                 </div>
               </form>
             ) : (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Votre mot de passe ne peut pas être affiché. Vous pouvez le modifier à tout moment.
               </p>
             )}
@@ -486,31 +527,40 @@ export default function ProfilPage() {
       </div>
 
       {deletePhotoModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm p-4 dark:bg-slate-900/50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <TrashIcon className="w-5 h-5 text-red-600" />
                 Supprimer la photo de profil
               </h3>
+              <button
+                onClick={() => setDeletePhotoModal(false)}
+                className="p-1.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                aria-label="Fermer"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
             </div>
-            <div className="px-6 py-4">
-              <p className="text-gray-600">
+            <div className="px-6 py-5">
+              <p className="text-sm text-slate-600 leading-relaxed">
                 Êtes-vous sûr de vouloir supprimer votre photo de profil ? Un avatar avec vos
                 initiales sera affiché à la place.
               </p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-2">
               <button
                 onClick={() => setDeletePhotoModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={handleDeletePhoto}
                 disabled={deletingPhoto}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600/40 transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
+                <TrashIcon className="w-4 h-4" />
                 {deletingPhoto ? "Suppression..." : "Supprimer"}
               </button>
             </div>

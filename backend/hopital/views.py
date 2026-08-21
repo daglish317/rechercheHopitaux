@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser
+from authentication.permissions import IsAdministrateur
 from django.shortcuts import get_object_or_404
 
 from .models import Hopital
@@ -9,7 +9,7 @@ from .serializers import HopitalSerializer
 
 
 class HopitalListView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get(self, request):
         hopitaux = Hopital.objects.select_related("type_hopital").all()
@@ -25,7 +25,7 @@ class HopitalListView(APIView):
 
 
 class HopitalDetailView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def get_object(self, pk):
         return get_object_or_404(Hopital, pk=pk)
@@ -45,7 +45,7 @@ class HopitalDetailView(APIView):
 
 
 class HopitalStatutView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdministrateur]
 
     def patch(self, request, pk):
         hopital = get_object_or_404(Hopital, pk=pk)

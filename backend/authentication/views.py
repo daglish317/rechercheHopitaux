@@ -112,12 +112,24 @@ class ProfileView(APIView):
 
 class ProfilePhotoView(APIView):
     permission_classes = [IsAuthenticated]
+    max_photo_size = 2 * 1024 * 1024
+    allowed_photo_types = {"image/jpeg", "image/png", "image/webp"}
 
     def put(self, request):
         photo = request.FILES.get("photo")
         if not photo:
             return Response(
                 {"error": "Aucune photo fournie."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if photo.size > self.max_photo_size:
+            return Response(
+                {"error": "La photo ne doit pas depasser 2 Mo."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if getattr(photo, "content_type", None) not in self.allowed_photo_types:
+            return Response(
+                {"error": "Format accepte: JPG, PNG ou WebP."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

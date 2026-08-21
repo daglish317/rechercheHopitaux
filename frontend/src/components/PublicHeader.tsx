@@ -2,83 +2,120 @@
 
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import ThemeToggle from "./ThemeToggle";
+import { SearchIcon, MapPinIcon, LoginIcon, LogoutIcon } from "./Icons";
 
 interface PublicHeaderProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onLocateMe: () => void;
   hasPosition: boolean;
+  resultCount?: number;
+  hasSearched?: boolean;
 }
 
-export default function PublicHeader({ searchQuery, onSearchChange, onLocateMe, hasPosition }: PublicHeaderProps) {
+export default function PublicHeader({
+  searchQuery,
+  onSearchChange,
+  onLocateMe,
+  hasPosition,
+  resultCount = 0,
+  hasSearched = false,
+}: PublicHeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center px-6 z-20 relative">
-      <div className="flex items-center gap-4 flex-1">
-        <Link href="/" className="flex-shrink-0">
-          <span className="text-xl font-bold text-blue-600">Hopital</span>
-        </Link>
+    <header className="sticky top-0 z-20 border-b border-white/70 bg-white/88 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/88">
+      <div className="flex min-h-20 flex-col gap-3 px-3 py-3 sm:px-5 lg:flex-row lg:items-center lg:px-7">
+        <div className="flex items-center gap-4 lg:w-[390px]">
+          <Link
+            href="/"
+            className="flex-shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-teal-500"
+          >
+            <img
+              src="/logo/logo-horizontal-light.svg"
+              alt="SanteProx"
+              className="h-9 w-auto"
+            />
+          </Link>
+          <div className="hidden sm:block">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Recherche hospitaliere
+            </p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              RDC et structures referencees
+            </p>
+          </div>
+        </div>
 
-        <div className="flex-1 max-w-xl ml-6">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Rechercher un hôpital, une spécialité, un examen..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Rechercher un hopital, une specialite, un examen..."
+            className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-24 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
+          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {hasSearched ? `${resultCount} resultat${resultCount > 1 ? "s" : ""}` : "Pret"}
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-3 ml-4">
-        {hasPosition && (
-          <button
-            onClick={onLocateMe}
-            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-600 font-medium px-3 py-2 border border-gray-300 rounded-md hover:border-blue-300 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Ma position
-          </button>
-        )}
-
-        {isAuthenticated ? (
-          <>
-            {user?.role === "ADMINISTRATEUR" && (
-              <Link
-                href="/admin/dashboard"
-                className="text-gray-600 hover:text-blue-600 text-sm font-medium px-3 py-2"
-              >
-                Dashboard
-              </Link>
-            )}
-            <span className="text-sm text-gray-500">{user?.nom}</span>
+        <div className="flex items-center justify-between gap-2 lg:justify-end">
+          {hasPosition && (
             <button
-              onClick={logout}
-              className="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-2"
+              type="button"
+              onClick={onLocateMe}
+              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:border-teal-300 hover:text-teal-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-teal-300"
             >
-              Déconnexion
+              <MapPinIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Ma position</span>
             </button>
-          </>
-        ) : (
-          <>
-            <Link
-              href="/connexion"
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium px-3 py-2"
-            >
-              Connexion
-            </Link>
-            <Link
-              href="/inscription"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              S&apos;inscrire
-            </Link>
-          </>
-        )}
+          )}
+
+          <ThemeToggle />
+
+          {isAuthenticated ? (
+            <>
+              {user?.role === "ADMINISTRATEUR" && (
+                <Link
+                  href="/admin/dashboard"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Dashboard
+                </Link>
+              )}
+              <span className="hidden text-sm text-slate-500 dark:text-slate-400 sm:inline">
+                {user?.nom}
+              </span>
+              <button
+                type="button"
+                onClick={logout}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+              >
+                <LogoutIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Deconnexion</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/connexion"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <LoginIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Connexion</span>
+              </Link>
+              <Link
+                href="/inscription"
+                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700"
+              >
+                S&apos;inscrire
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

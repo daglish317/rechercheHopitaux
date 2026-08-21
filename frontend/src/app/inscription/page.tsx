@@ -4,6 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  HospitalIcon,
+  CheckCircleIcon,
+  AlertIcon,
+  UserIcon,
+  MailIcon,
+  LockIcon,
+} from "@/components/Icons";
 
 export default function InscriptionPage() {
   const [nom, setNom] = useState("");
@@ -29,6 +37,8 @@ export default function InscriptionPage() {
 
     if (!motDePasse) {
       newErrors.motDePasse = "Le mot de passe est obligatoire.";
+    } else if (motDePasse.length < 8) {
+      newErrors.motDePasse = "Le mot de passe doit contenir au moins 8 caracteres.";
     }
 
     setErrors(newErrors);
@@ -83,23 +93,27 @@ export default function InscriptionPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50 flex flex-col">
         <Navbar />
-        <main className="max-w-md mx-auto px-4 py-12">
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <div className="text-green-600 text-5xl mb-4">✓</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Compte créé avec succès
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Vous pouvez maintenant vous connecter avec vos identifiants.
-            </p>
-            <Link
-              href="/connexion"
-              className="inline-block bg-blue-600 text-white py-2 px-6 rounded-md font-medium hover:bg-blue-700 transition-colors"
-            >
-              Se connecter
-            </Link>
+        <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
+          <div className="w-full max-w-md">
+            <div className="bg-white rounded-2xl shadow-lg shadow-slate-200 border border-slate-100 p-8 text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-50 mb-6">
+                <CheckCircleIcon className="w-12 h-12 text-emerald-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-4">
+                Compte créé avec succès
+              </h1>
+              <p className="text-slate-600 mb-8">
+                Vous pouvez maintenant vous connecter avec vos identifiants.
+              </p>
+              <Link
+                href="/connexion"
+                className="inline-block w-full sm:w-auto bg-blue-600 text-white py-3 px-8 rounded-xl font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-colors"
+              >
+                Se connecter
+              </Link>
+            </div>
           </div>
         </main>
       </div>
@@ -107,105 +121,141 @@ export default function InscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
-      <main className="max-w-md mx-auto px-4 py-12">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Créer un compte
-          </h1>
-
-          {errors.general && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">
-              {errors.general}
+      <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2">
+              <HospitalIcon className="w-8 h-8 text-blue-600" />
+              <span className="text-3xl font-bold text-blue-600 tracking-tight">
+                Hopital
+              </span>
             </div>
-          )}
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="nom"
-                className="block text-sm font-medium text-gray-700 mb-1"
+          <div className="bg-white rounded-2xl shadow-lg shadow-slate-200 border border-slate-100 p-6 sm:p-8">
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                <UserIcon className="w-7 h-7 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 text-center">
+                Créer un compte
+              </h1>
+              <p className="mt-1 text-sm text-slate-600 text-center">
+                Rejoignez-nous en quelques secondes
+              </p>
+            </div>
+
+            {errors.general && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-600 p-3 rounded-xl mb-6 text-sm">
+                <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>{errors.general}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label
+                  htmlFor="nom"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
+                  Nom
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <UserIcon className="w-5 h-5 text-slate-400" />
+                  </span>
+                  <input
+                    id="nom"
+                    type="text"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    className={`w-full pl-11 pr-4 py-3 text-slate-900 placeholder:text-slate-400 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors ${
+                      errors.nom ? "border-red-500" : "border-slate-300"
+                    }`}
+                    placeholder="Votre nom"
+                  />
+                </div>
+                {errors.nom && (
+                  <p className="mt-1.5 text-sm text-red-600">{errors.nom}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
+                  Email
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <MailIcon className="w-5 h-5 text-slate-400" />
+                  </span>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full pl-11 pr-4 py-3 text-slate-900 placeholder:text-slate-400 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors ${
+                      errors.email ? "border-red-500" : "border-slate-300"
+                    }`}
+                    placeholder="votre@email.com"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="motDePasse"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <LockIcon className="w-5 h-5 text-slate-400" />
+                  </span>
+                  <input
+                    id="motDePasse"
+                    type="password"
+                    value={motDePasse}
+                    onChange={(e) => setMotDePasse(e.target.value)}
+                    minLength={8}
+                    className={`w-full pl-11 pr-4 py-3 text-slate-900 placeholder:text-slate-400 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors ${
+                      errors.motDePasse ? "border-red-500" : "border-slate-300"
+                    }`}
+                    placeholder="••••••••"
+                  />
+                </div>
+                {errors.motDePasse && (
+                  <p className="mt-1.5 text-sm text-red-600">{errors.motDePasse}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 px-4 rounded-xl font-semibold shadow-md shadow-blue-600/25 hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Nom
-              </label>
-              <input
-                id="nom"
-                type="text"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.nom ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="Votre nom"
-              />
-              {errors.nom && (
-                <p className="mt-1 text-sm text-red-600">{errors.nom}</p>
-              )}
-            </div>
+                {loading ? "Création..." : "Créer mon compte"}
+              </button>
+            </form>
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
+            <p className="mt-6 text-center text-sm text-slate-600">
+              Déjà un compte ?{" "}
+              <Link
+                href="/connexion"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="votre@email.com"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="motDePasse"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Mot de passe
-              </label>
-              <input
-                id="motDePasse"
-                type="password"
-                value={motDePasse}
-                onChange={(e) => setMotDePasse(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.motDePasse ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="••••••••"
-              />
-              {errors.motDePasse && (
-                <p className="mt-1 text-sm text-red-600">{errors.motDePasse}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? "Création..." : "Créer mon compte"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Déjà un compte ?{" "}
-            <Link
-              href="/connexion"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Se connecter
-            </Link>
-          </p>
+                Se connecter
+              </Link>
+            </p>
+          </div>
         </div>
       </main>
     </div>

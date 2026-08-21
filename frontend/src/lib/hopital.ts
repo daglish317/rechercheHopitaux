@@ -7,8 +7,8 @@ export interface Hopital {
   type_hopital_nom: string;
   adresse: string;
   telephone: string;
-  latitude: string;
-  longitude: string;
+  latitude: string | null;
+  longitude: string | null;
   statut: "ACTIF" | "INACTIF";
 }
 
@@ -17,8 +17,8 @@ export interface HopitalCreateData {
   type_hopital: number;
   adresse: string;
   telephone?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   statut: "ACTIF" | "INACTIF";
 }
 

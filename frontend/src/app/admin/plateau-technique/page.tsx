@@ -8,6 +8,7 @@ import {
   HopitalPlateauTechnique,
 } from "@/lib/plateauTechnique";
 import { hopitalAPI, Hopital } from "@/lib/hopital";
+import { PlusIcon, EditIcon, TrashIcon, XIcon, AlertIcon } from "@/components/Icons";
 
 type Tab = "catalogue" | "associations";
 
@@ -224,8 +225,8 @@ export default function PlateauTechniquePage() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Plateau technique</h1>
-        <div className="bg-white rounded-lg shadow-sm p-6 text-center py-12 text-gray-500">
+        <h1 className="text-3xl font-bold text-slate-900 mb-8">Plateau technique</h1>
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 text-center py-12 text-slate-600">
           Chargement...
         </div>
       </div>
@@ -235,38 +236,43 @@ export default function PlateauTechniquePage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Plateau technique</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-slate-900">Plateau technique</h1>
+        <p className="mt-2 text-slate-600">
           Gestion du plateau technique et de ses associations avec les hôpitaux
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-md text-sm">
-          {error}
-          <button onClick={() => setError("")} className="ml-2 text-red-400 hover:text-red-600">
-            ×
+        <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg text-sm">
+          <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+          <span className="flex-1">{error}</span>
+          <button
+            onClick={() => setError("")}
+            className="text-slate-600 hover:text-slate-800 transition-colors"
+            aria-label="Fermer"
+          >
+            <XIcon className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <div className="mb-6 flex gap-4 border-b border-gray-200">
+      <div className="mb-6 flex gap-4 sm:gap-6 border-b border-slate-200 overflow-x-auto">
         <button
           onClick={() => setTab("catalogue")}
-          className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+          className={`pb-3 px-1 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             tab === "catalogue"
               ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           Catalogue ({plateaux.length})
         </button>
         <button
           onClick={() => setTab("associations")}
-          className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+          className={`pb-3 px-1 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             tab === "associations"
               ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           Associations hôpital-plateau ({associations.length})
@@ -274,55 +280,60 @@ export default function PlateauTechniquePage() {
       </div>
 
       {tab === "catalogue" && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h2 className="text-xl font-semibold text-slate-900">
               Liste des éléments ({plateaux.length})
             </h2>
             <button
               onClick={handleOpenCreate}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              + Ajouter un élément
+              <PlusIcon className="w-4 h-4" />
+              Ajouter un élément
             </button>
           </div>
 
           {plateaux.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-slate-600">
               Aucun élément de plateau technique enregistré.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Nom
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-slate-200">
                   {plateaux.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                         {item.nom}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
-                        <button
-                          onClick={() => handleOpenEdit(item)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => setDeleteModal(item)}
-                          className="text-red-600 hover:text-red-800 font-medium"
-                        >
-                          Supprimer
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <div className="inline-flex items-center gap-4">
+                          <button
+                            onClick={() => handleOpenEdit(item)}
+                            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                          >
+                            <EditIcon className="w-4 h-4" />
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => setDeleteModal(item)}
+                            className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 font-medium transition-colors"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                            Supprimer
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -334,53 +345,55 @@ export default function PlateauTechniquePage() {
       )}
 
       {tab === "associations" && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h2 className="text-xl font-semibold text-slate-900">
               Associations ({associations.length})
             </h2>
             <button
               onClick={handleOpenAssocForm}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              + Ajouter une association
+              <PlusIcon className="w-4 h-4" />
+              Ajouter une association
             </button>
           </div>
 
           {associations.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-slate-600">
               Aucune association enregistrée.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Hôpital
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Plateau technique
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-slate-200">
                   {associations.map((assoc) => (
-                    <tr key={assoc.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr key={assoc.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                         {assoc.hopital_nom}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                         {assoc.plateau_technique_nom}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <button
                           onClick={() => setDeleteAssocModal(assoc)}
-                          className="text-red-600 hover:text-red-800 font-medium"
+                          className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 font-medium transition-colors"
                         >
+                          <TrashIcon className="w-4 h-4" />
                           Supprimer
                         </button>
                       </td>
@@ -394,23 +407,33 @@ export default function PlateauTechniquePage() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editingItem ? "Modifier l&apos;élément" : "Ajouter un élément"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingItem ? "Modifier l'élément" : "Ajouter un élément"}
               </h3>
+              <button
+                type="button"
+                onClick={handleCloseForm}
+                className="text-slate-600 hover:text-slate-800 transition-colors"
+                aria-label="Fermer"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="px-6 py-4">
               {formError && (
-                <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                  {formError}
+                <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+                  <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
                 </div>
               )}
 
               <div className="mb-4">
-                <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="nom" className="block text-sm font-medium text-slate-700 mb-1">
                   Nom *
                 </label>
                 <input
@@ -419,24 +442,24 @@ export default function PlateauTechniquePage() {
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="Ex: Scanner, IRM, Échographe..."
                   autoFocus
                 />
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleCloseForm}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !nom.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {submitting
                     ? "Enregistrement..."
@@ -451,31 +474,46 @@ export default function PlateauTechniquePage() {
       )}
 
       {deleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">
                 Confirmer la suppression
               </h3>
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                className="text-slate-600 hover:text-slate-800 transition-colors"
+                aria-label="Fermer"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
             </div>
             <div className="px-6 py-4">
-              <p className="text-gray-600">
-                Êtes-vous sûr de vouloir supprimer l&apos;élément{" "}
-                <strong>&laquo; {deleteModal.nom} &raquo;</strong> ?
-              </p>
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertIcon className="w-5 h-5 text-red-600" />
+                </div>
+                <p className="pt-2 text-sm text-slate-600">
+                  Êtes-vous sûr de vouloir supprimer l&apos;élément{" "}
+                  <strong className="font-semibold text-slate-900">&laquo; {deleteModal.nom} &raquo;</strong> ?
+                </p>
+              </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
               <button
                 onClick={() => setDeleteModal(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
+                <TrashIcon className="w-4 h-4" />
                 {deleting ? "Suppression..." : "Supprimer"}
               </button>
             </div>
@@ -484,30 +522,40 @@ export default function PlateauTechniquePage() {
       )}
 
       {showAssocForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">
                 Ajouter une association
               </h3>
+              <button
+                type="button"
+                onClick={handleCloseAssocForm}
+                className="text-slate-600 hover:text-slate-800 transition-colors"
+                aria-label="Fermer"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleSubmitAssoc} className="px-6 py-4">
               {assocFormError && (
-                <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                  {assocFormError}
+                <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+                  <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                  <span>{assocFormError}</span>
                 </div>
               )}
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Hôpital *
                 </label>
                 <select
                   value={assocHopital}
                   onChange={(e) => setAssocHopital(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="">Sélectionner un hôpital</option>
                   {hopitaux.map((h) => (
@@ -519,14 +567,14 @@ export default function PlateauTechniquePage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Élément du plateau technique *
                 </label>
                 <select
                   value={assocPlateau}
                   onChange={(e) => setAssocPlateau(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="">Sélectionner un élément</option>
                   {plateaux.map((p) => (
@@ -537,18 +585,18 @@ export default function PlateauTechniquePage() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleCloseAssocForm}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAssoc || !assocHopital || !assocPlateau}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {submittingAssoc ? "Création..." : "Créer l'association"}
                 </button>
@@ -559,33 +607,48 @@ export default function PlateauTechniquePage() {
       )}
 
       {deleteAssocModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">
                 Confirmer la suppression
               </h3>
+              <button
+                type="button"
+                onClick={() => setDeleteAssocModal(null)}
+                className="text-slate-600 hover:text-slate-800 transition-colors"
+                aria-label="Fermer"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
             </div>
             <div className="px-6 py-4">
-              <p className="text-gray-600">
-                Supprimer l&apos;association{" "}
-                <strong>
-                  &laquo; {deleteAssocModal.hopital_nom} ↔ {deleteAssocModal.plateau_technique_nom} &raquo;
-                </strong> ?
-              </p>
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertIcon className="w-5 h-5 text-red-600" />
+                </div>
+                <p className="pt-2 text-sm text-slate-600">
+                  Supprimer l&apos;association{" "}
+                  <strong className="font-semibold text-slate-900">
+                    &laquo; {deleteAssocModal.hopital_nom} ↔ {deleteAssocModal.plateau_technique_nom} &raquo;
+                  </strong> ?
+                </p>
+              </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
               <button
                 onClick={() => setDeleteAssocModal(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={handleDeleteAssoc}
                 disabled={deletingAssoc}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
+                <TrashIcon className="w-4 h-4" />
                 {deletingAssoc ? "Suppression..." : "Supprimer"}
               </button>
             </div>

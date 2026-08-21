@@ -86,9 +86,8 @@ export const authAPI = {
   uploadPhoto: (photo: File) => {
     const formData = new FormData();
     formData.append("photo", photo);
-    return api.post<User>("/auth/profile/photo/", formData, {
+    return api.put<User>("/auth/profile/photo/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
-      method: "PUT",
     });
   },
   deletePhoto: () => api.delete<User>("/auth/profile/photo/"),
