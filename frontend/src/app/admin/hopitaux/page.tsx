@@ -457,9 +457,46 @@ export default function HopitauxPage() {
  />
  </div>
 
+ <div>
+ <div className="flex items-center justify-between mb-1.5">
+ <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">Coordonnées GPS</label>
+ <button
+ type="button"
+ onClick={() => {
+ if (navigator.geolocation) {
+ navigator.geolocation.getCurrentPosition(
+ (position) => {
+ setFormData({
+ ...formData,
+ latitude: position.coords.latitude.toFixed(7),
+ longitude: position.coords.longitude.toFixed(7),
+ });
+ },
+ (error) => {
+ let errorMessage = "Impossible d'obtenir votre position.";
+ if (error.code === error.PERMISSION_DENIED) {
+ errorMessage = "Autorisation de localisation refusée.";
+ } else if (error.code === error.POSITION_UNAVAILABLE) {
+ errorMessage = "Position non disponible.";
+ } else if (error.code === error.TIMEOUT) {
+ errorMessage = "Délai d'attente dépassé.";
+ }
+ setFormErrors({ ...formErrors, latitude: errorMessage });
+ }
+ );
+ } else {
+ setFormErrors({ ...formErrors, latitude: "Géolocalisation non supportée par votre navigateur." });
+ }
+ }}
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors"
+ >
+ <MapPinIcon className="w-3.5 h-3.5" />
+ Utiliser ma position
+ </button>
+ </div>
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
  <div>
- <label htmlFor="latitude" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Latitude</label>
+ <label htmlFor="latitude" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Latitude</label>
  <input
  id="latitude"
  type="number"
@@ -477,7 +514,7 @@ export default function HopitauxPage() {
  )}
  </div>
  <div>
- <label htmlFor="longitude" className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1.5">Longitude</label>
+ <label htmlFor="longitude" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Longitude</label>
  <input
  id="longitude"
  type="number"
@@ -493,6 +530,7 @@ export default function HopitauxPage() {
  {formErrors.longitude}
  </p>
  )}
+ </div>
  </div>
  </div>
 
