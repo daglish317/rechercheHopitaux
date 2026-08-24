@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  HospitalIcon,
   LoginIcon,
   MailIcon,
   LockIcon,
@@ -34,22 +34,9 @@ export default function ConnexionPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="fixed inset-x-0 top-0 z-30 border-b border-teal-100 bg-white/95 shadow-sm shadow-teal-900/5 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center rounded-lg focus-visible:ring-2 focus-visible:ring-teal-500">
-            <img
-              src="/logo/orientasoins-logo-white-bg.png"
-              alt="SanteProx"
-              className="h-9 w-auto"
-            />
-          </Link>
-          
-        </div>
-      </header>
-      <main className="flex-1 flex items-center justify-center px-4 py-12 pt-28 sm:py-16 sm:pt-28">
+      <Navbar />
+      <main className="flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
         <div className="w-full max-w-md">
-          
-
           <div className="bg-white rounded-2xl shadow-lg shadow-slate-200 border border-slate-100 p-6 sm:p-8">
             <div className="flex flex-col items-center mb-8">
               <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">

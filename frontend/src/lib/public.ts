@@ -8,6 +8,17 @@ export interface HopitalSearchResult {
   telephone: string;
   latitude: string | null;
   longitude: string | null;
+  distance_km: number | null;
+  distance_text: string | null;
+}
+
+export interface SearchResponse {
+  located: HopitalSearchResult[];
+  not_located: HopitalSearchResult[];
+  user_position: {
+    lat: number;
+    lon: number;
+  } | null;
 }
 
 export interface HopitalDetail {
@@ -25,8 +36,19 @@ export interface HopitalDetail {
 }
 
 export const publicAPI = {
-  search: (query: string) =>
-    api.get<HopitalSearchResult[]>("/search/", { params: { q: query } }),
+  search: (
+    query: string,
+    lat?: number | null,
+    lon?: number | null,
+    radius?: number | null
+  ) => {
+    const params: Record<string, string | number> = { q: query };
+    if (lat !== null && lat !== undefined) params.lat = lat;
+    if (lon !== null && lon !== undefined) params.lon = lon;
+    if (radius !== null && radius !== undefined) params.radius = radius;
+    
+    return api.get<SearchResponse>("/search/", { params });
+  },
   getHopitalDetail: (id: number) =>
     api.get<HopitalDetail>(`/hopitaux/${id}/`),
 };

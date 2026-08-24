@@ -2,27 +2,36 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import PublicHeader from "@/components/PublicHeader";
-import Sidebar from "@/components/Sidebar";
-import HospitalMap from "@/components/HospitalMap";
-import { publicAPI, HopitalSearchResult } from "@/lib/public";
+import MobileNavigation from "@/components/MobileNavigation";
+import DesktopTabs from "@/components/DesktopTabs";
+import MapView from "@/components/views/MapView";
+import NearbyView from "@/components/views/NearbyView";
+import ListView from "@/components/views/ListView";
+import { publicAPI, HopitalSearchResult, SearchResponse } from "@/lib/public";
+
+export type ViewMode = "map" | "nearby" | "list";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<HopitalSearchResult[]>([]);
+  const [locatedHospitals, setLocatedHospitals] = useState<HopitalSearchResult[]>([]);
+  const [notLocatedHospitals, setNotLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
-  const [centerOnUser, setCenterOnUser] = useState(false);
+  const [activeView, setActiveView] = useState<ViewMode>("map");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Détecter la position de l'utilisateur au chargement
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserPosition([position.coords.latitude, position.coords.longitude]);
         },
-        () => {}
+        () => {
+          // Erreur silencieuse, l'utilisateur peut activer manuellement
+        }
       );
     }
   }, []);
@@ -36,34 +45,70 @@ export default function Home() {
             position.coords.longitude,
           ];
           setUserPosition(pos);
-          setCenterOnUser(true);
-          setTimeout(() => setCenterOnUser(false), 100);
+          
+          // Si on a déjà des résultats, relancer la recherche avec la position
+          if (searchQuery.trim() && hasSearched) {
+            performSearch(searchQuery, pos[0], pos[1]);
+          }
+          
+          // Basculer vers la vue "Proche" si on vient de l'activer
+          if (locatedHospitals.length > 0) {
+            setActiveView("nearby");
+          }
         },
-        () => {}
+        (error) => {
+          console.error("Erreur de géolocalisation:", error);
+        }
       );
     }
-  }, []);
+  }, [searchQuery, hasSearched, locatedHospitals.length]);
 
-  const performSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setResults([]);
-      setHasSearched(false);
-      setSelectedId(null);
-      return;
-    }
+  const performSearch = useCallback(
+    async (query: string, lat?: number, lon?: number) => {
+      if (!query.trim()) {
+        setLocatedHospitals([]);
+        setNotLocatedHospitals([]);
+        setHasSearched(false);
+        setSelectedId(null);
+        return;
+      }
 
-    setLoading(true);
-    setHasSearched(true);
-    try {
-      const response = await publicAPI.search(query);
-      setResults(response.data);
-      setSelectedId(null);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      setLoading(true);
+      setHasSearched(true);
+      
+      try {
+        const searchLat = lat !== undefined ? lat : userPosition?.[0];
+        const searchLon = lon !== undefined ? lon : userPosition?.[1];
+        
+        const response = await publicAPI.search(
+          query,
+          searchLat,
+          searchLon,
+          null
+        );
+        
+        setLocatedHospitals(response.data.located);
+        setNotLocatedHospitals(response.data.not_located);
+        setSelectedId(null);
+        
+        // Choisir automatiquement la meilleure vue
+        if (response.data.located.length > 0) {
+          // S'il y a des hôpitaux localisés, afficher la carte par défaut
+          setActiveView("map");
+        } else if (response.data.not_located.length > 0) {
+          // Sinon afficher la liste
+          setActiveView("list");
+        }
+      } catch (error) {
+        console.error("Erreur de recherche:", error);
+        setLocatedHospitals([]);
+        setNotLocatedHospitals([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userPosition]
+  );
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -84,6 +129,13 @@ export default function Home() {
     setSelectedId(hospital.id);
   }, []);
 
+  const handleViewChange = useCallback((view: ViewMode) => {
+    setActiveView(view);
+  }, []);
+
+  const totalCount = locatedHospitals.length + notLocatedHospitals.length;
+  const allHospitals = [...locatedHospitals, ...notLocatedHospitals];
+
   return (
     <div className="min-h-screen app-shell-bg flex flex-col">
       <PublicHeader
@@ -91,31 +143,96 @@ export default function Home() {
         onSearchChange={handleSearchChange}
         onLocateMe={handleLocateMe}
         hasPosition={userPosition !== null}
-        resultCount={results.length}
+        resultCount={totalCount}
         hasSearched={hasSearched}
       />
 
-      <main className="h-[calc(100vh-80px)] overflow-hidden px-3 py-4 sm:px-5 lg:px-7">
-        <section className="mx-auto grid h-full max-w-[1680px] grid-cols-1 gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <Sidebar
-            results={results}
-            selectedId={selectedId}
-            onSelect={handleSelect}
-            loading={loading}
-            hasSearched={hasSearched}
-          />
-
-          <div className="relative h-full min-h-0 overflow-hidden rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/10">
-            <HospitalMap
-              hospitals={results}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              userPosition={userPosition}
-              centerOnUser={centerOnUser}
+      <main className="flex-1 overflow-hidden px-3 py-4 sm:px-5 lg:px-7">
+        <section className="mx-auto h-full max-w-[1680px]">
+          <div className="flex h-full gap-4">
+            {/* Desktop Tabs */}
+            <DesktopTabs
+              activeView={activeView}
+              onViewChange={handleViewChange}
+              locatedCount={locatedHospitals.length}
+              totalCount={totalCount}
+              hasUserLocation={userPosition !== null}
             />
+
+            {/* Contenu principal */}
+            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/10 mb-20 md:mb-0">
+              {loading ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Recherche en cours...
+                    </p>
+                  </div>
+                </div>
+              ) : !hasSearched ? (
+                <div className="h-full flex items-center justify-center px-6">
+                  <div className="text-center max-w-md">
+                    <svg
+                      className="w-20 h-20 text-slate-300 dark:text-slate-600 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Recherchez un hôpital
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Utilisez la barre de recherche pour trouver des hôpitaux, des
+                      examens médicaux ou des plateaux techniques.
+                    </p>
+                  </div>
+                </div>
+              ) : activeView === "map" ? (
+                <MapView
+                  hospitals={locatedHospitals}
+                  notLocatedCount={notLocatedHospitals.length}
+                  selectedId={selectedId}
+                  onSelect={handleSelect}
+                  userPosition={userPosition}
+                  onShowNotLocated={() => setActiveView("list")}
+                />
+              ) : activeView === "nearby" ? (
+                <NearbyView
+                  locatedHospitals={locatedHospitals}
+                  notLocatedHospitals={notLocatedHospitals}
+                  selectedId={selectedId}
+                  onSelect={handleSelect}
+                  userPosition={userPosition}
+                />
+              ) : (
+                <ListView
+                  hospitals={allHospitals}
+                  selectedId={selectedId}
+                  onSelect={handleSelect}
+                  hasUserPosition={userPosition !== null}
+                />
+              )}
+            </div>
           </div>
         </section>
       </main>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation
+        activeView={activeView}
+        onViewChange={handleViewChange}
+        locatedCount={locatedHospitals.length}
+        totalCount={totalCount}
+        hasUserLocation={userPosition !== null}
+      />
     </div>
   );
 }

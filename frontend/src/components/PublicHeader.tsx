@@ -60,16 +60,21 @@ export default function PublicHeader({
         </div>
 
         <div className="flex items-center justify-between gap-2 lg:justify-end">
-          {hasPosition && (
-            <button
-              type="button"
-              onClick={onLocateMe}
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-teal-100 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:border-teal-300 hover:text-teal-700"
-            >
-              <MapPinIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Ma position</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onLocateMe}
+            className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium shadow-sm transition-colors ${
+              hasPosition
+                ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100"
+                : "border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700"
+            }`}
+            title={hasPosition ? "Recentrer sur ma position" : "Utiliser ma position"}
+          >
+            <MapPinIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {hasPosition ? "Ma position" : "Utiliser ma position"}
+            </span>
+          </button>
 
           {isAuthenticated ? (
             <>
