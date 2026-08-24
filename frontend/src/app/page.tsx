@@ -143,7 +143,7 @@ export default function Home() {
   const allHospitals = [...locatedHospitals, ...notLocatedHospitals];
 
   return (
-    <div className="min-h-screen app-shell-bg flex flex-col">
+    <div className="h-screen flex flex-col app-shell-bg overflow-hidden">
       <PublicHeader
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
@@ -153,8 +153,8 @@ export default function Home() {
         hasSearched={hasSearched}
       />
 
-      <main className="flex-1 overflow-hidden px-3 py-4 sm:px-5 lg:px-7">
-        <section className="mx-auto h-full max-w-[1680px]">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <section className="mx-auto w-full max-w-[1680px] flex-1 flex flex-col min-h-0 px-3 py-2 sm:px-5 lg:px-7">
           <div className="flex h-full gap-4">
             {/* Desktop Tabs */}
             <DesktopTabs
@@ -166,10 +166,10 @@ export default function Home() {
             />
 
             {/* Contenu principal */}
-            <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/10 mb-20 md:mb-0">
+            <div className="flex-1 min-h-0 flex flex-col rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/10 overflow-hidden mb-16 md:mb-0">
               {/* Bandeau de recherche */}
               {hasSearched && searchQuery && (
-                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-800">
+                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-800 shrink-0">
                   <p className="text-sm text-blue-800 dark:text-blue-300">
                     Résultats pour <strong>&quot;{searchQuery}&quot;</strong> :{" "}
                     <strong>{totalCount}</strong> {totalCount > 1 ? "hôpitaux trouvés" : "hôpital trouvé"}
@@ -177,7 +177,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="h-full overflow-hidden">{loading ? (
+              <div className="flex-1 min-h-0 overflow-hidden">{loading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
