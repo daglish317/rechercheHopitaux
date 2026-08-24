@@ -23,7 +23,6 @@ const menuItems = [
   { label: "Hopitaux", href: "/admin/hopitaux", icon: HospitalIcon },
   { label: "Types d'hopitaux", href: "/admin/types-hopitaux", icon: TagIcon },
   { label: "Maladies", href: "/admin/maladies", icon: VirusIcon },
-  { label: "Prises en charge", href: "/admin/prises-en-charge", icon: PillIcon },
   { label: "Examens medicaux", href: "/admin/examens-medicaux", icon: MicroscopeIcon },
   { label: "Plateau technique", href: "/admin/plateau-technique", icon: CogIcon },
   { label: "Profil", href: "/admin/profil", icon: UserIcon },

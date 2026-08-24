@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Maladie
+
+from hopital.models import Hopital
+
+from .models import Maladie, PriseEnCharge
 
 
 class MaladieSerializer(serializers.ModelSerializer):
@@ -20,9 +23,60 @@ class MaladieSerializer(serializers.ModelSerializer):
             return attrs
 
         if Maladie.objects.filter(nom__iexact=nom).exists():
-            raise serializers.ValidationError(
-                {"nom": "Une maladie avec ce nom existe déjà."}
-            )
+            raise serializers.ValidationError({"nom": "Une maladie avec ce nom existe déjà."})
 
         attrs["nom"] = nom
         return attrs
+
+
+class PriseEnChargeSerializer(serializers.ModelSerializer):
+    hopital_nom = serializers.CharField(source="hopital.nom", read_only=True)
+    maladie_nom = serializers.CharField(source="maladie.nom", read_only=True)
+
+    class Meta:
+        model = PriseEnCharge
+        fields = ["id", "hopital", "hopital_nom", "maladie", "maladie_nom"]
+
+    def validate(self, attrs):
+        hopital = attrs.get("hopital")
+        maladie = attrs.get("maladie")
+        instance = self.instance
+
+        if hopital and maladie:
+            if instance and instance.hopital == hopital and instance.maladie == maladie:
+                return attrs
+
+            if PriseEnCharge.objects.filter(hopital=hopital, maladie=maladie).exists():
+                raise serializers.ValidationError("Cette association existe déjà.")
+
+        return attrs
+
+
+class HopitalLightSerializer(serializers.ModelSerializer):
+    type_hopital_nom = serializers.CharField(source="type_hopital.nom", read_only=True)
+
+    class Meta:
+        model = Hopital
+        fields = ["id", "nom", "type_hopital_nom"]
+
+
+class BulkPriseEnChargeSerializer(serializers.Serializer):
+    maladies = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=True,
+        help_text="Liste des IDs de maladies à associer.",
+    )
+
+    def validate_maladies(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError(
+                "Une maladie ne peut être associée qu'une seule fois au même hôpital."
+            )
+
+        existing = Maladie.objects.filter(id__in=value).values_list("id", flat=True)
+        missing = set(value) - set(existing)
+        if missing:
+            raise serializers.ValidationError(
+                f"Maladies introuvables : {', '.join(str(i) for i in sorted(missing))}"
+            )
+        return value

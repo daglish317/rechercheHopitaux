@@ -1,659 +1,617 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   plateauTechniqueAPI,
   PlateauTechnique,
-  hopitalPlateauTechniqueAPI,
-  HopitalPlateauTechnique,
+  HopitalLight,
+  HopitalPlateaux,
 } from "@/lib/plateauTechnique";
-import { hopitalAPI, Hopital } from "@/lib/hopital";
-import { PlusIcon, EditIcon, TrashIcon, XIcon, AlertIcon } from "@/components/Icons";
+import {
+  SearchIcon,
+  ChevronLeftIcon,
+  PlusIcon,
+  XIcon,
+  AlertIcon,
+  UploadIcon,
+  DownloadIcon,
+} from "@/components/Icons";
 
-type Tab = "catalogue" | "associations";
+type ViewMode = "list" | "manage" | "detail";
+
+interface PendingItem {
+  id?: number;
+  nom: string;
+  isNew: boolean;
+  tempId: string;
+}
 
 export default function PlateauTechniquePage() {
-  const [tab, setTab] = useState<Tab>("catalogue");
+  const [view, setView] = useState<ViewMode>("list");
 
-  const [plateaux, setPlateaux] = useState<PlateauTechnique[]>([]);
-  const [associations, setAssociations] = useState<HopitalPlateauTechnique[]>([]);
-  const [hopitaux, setHopitaux] = useState<Hopital[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [hopitaux, setHopitaux] = useState<HopitalLight[]>([]);
+  const [hopitauxLoading, setHopitauxLoading] = useState(true);
+  const [hopitauxError, setHopitauxError] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextPageFetchRef = useRef(false);
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<PlateauTechnique | null>(null);
-  const [nom, setNom] = useState("");
-  const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [selectedHopital, setSelectedHopital] = useState<HopitalLight | null>(null);
 
-  const [deleteModal, setDeleteModal] = useState<PlateauTechnique | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [allPlateaux, setAllPlateaux] = useState<PlateauTechnique[]>([]);
+  const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
+  const [associationsLoading, setAssociationsLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
-  const [showAssocForm, setShowAssocForm] = useState(false);
-  const [assocHopital, setAssocHopital] = useState("");
-  const [assocPlateau, setAssocPlateau] = useState("");
-  const [assocFormError, setAssocFormError] = useState("");
-  const [submittingAssoc, setSubmittingAssoc] = useState(false);
+  const [detailData, setDetailData] = useState<HopitalPlateaux | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
 
-  const [deleteAssocModal, setDeleteAssocModal] = useState<HopitalPlateauTechnique | null>(null);
-  const [deletingAssoc, setDeletingAssoc] = useState(false);
-
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const fetchHopitaux = useCallback(async (q: string, p: number) => {
+    setHopitauxLoading(true);
+    setHopitauxError("");
     try {
-      const [plateauxRes, associationsRes, hopitauxRes] = await Promise.all([
-        plateauTechniqueAPI.getAll(),
-        hopitalPlateauTechniqueAPI.getAll(),
-        hopitalAPI.getAll(),
-      ]);
+      const response = await plateauTechniqueAPI.getHopitaux({ search: q, page: p, page_size: 20 });
       if (mountedRef.current) {
-        setPlateaux(plateauxRes.data);
-        setAssociations(associationsRes.data);
-        setHopitaux(hopitauxRes.data);
-        setError("");
+        setHopitaux(response.data.results);
+        setTotalPages(response.data.total_pages);
       }
     } catch {
-      if (mountedRef.current) {
-        setError("Erreur lors du chargement des données.");
-      }
+      if (mountedRef.current) setHopitauxError("Erreur lors du chargement des hôpitaux.");
     } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
+      if (mountedRef.current) setHopitauxLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    mountedRef.current = true;
-    const load = async () => {
-      await fetchData();
-    };
-    load();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [fetchData]);
-
-  const handleOpenCreate = () => {
-    setEditingItem(null);
-    setNom("");
-    setFormError("");
-    setShowForm(true);
-  };
-
-  const handleOpenEdit = (item: PlateauTechnique) => {
-    setEditingItem(item);
-    setNom(item.nom);
-    setFormError("");
-    setShowForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setEditingItem(null);
-    setNom("");
-    setFormError("");
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-    setSubmitting(true);
-
-    try {
-      if (editingItem) {
-        await plateauTechniqueAPI.update(editingItem.id, { nom });
-      } else {
-        await plateauTechniqueAPI.create({ nom });
-      }
-      handleCloseForm();
-      fetchData();
-    } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as { response?: { data?: Record<string, string | string[]> } };
-        if (axiosError.response?.data) {
-          const data = axiosError.response.data;
-          const message = data.nom
-            ? Array.isArray(data.nom)
-              ? data.nom[0]
-              : String(data.nom)
-            : "Une erreur est survenue.";
-          setFormError(message);
-        }
-      } else {
-        setFormError("Une erreur est survenue.");
-      }
-    } finally {
-      setSubmitting(false);
+    if (skipNextPageFetchRef.current) {
+      skipNextPageFetchRef.current = false;
+      return;
     }
-  };
+    fetchHopitaux(search, page);
+  }, [fetchHopitaux, page, search]);
 
-  const handleDelete = async () => {
-    if (!deleteModal) return;
-    setDeleting(true);
-
-    try {
-      await plateauTechniqueAPI.delete(deleteModal.id);
-      setDeleteModal(null);
-      fetchData();
-    } catch (err: unknown) {
-      let message = "Erreur lors de la suppression.";
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as { response?: { data?: { error?: string } } };
-        if (axiosError.response?.data?.error) {
-          message = axiosError.response.data.error;
-        }
-      }
-      setDeleteModal(null);
-      setError(message);
-    } finally {
-      setDeleting(false);
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (page !== 1) {
+      skipNextPageFetchRef.current = true;
+      setPage(1);
     }
+    debounceRef.current = setTimeout(() => fetchHopitaux(value, 1), 300);
   };
 
-  const handleOpenAssocForm = () => {
-    setAssocHopital("");
-    setAssocPlateau("");
-    setAssocFormError("");
-    setShowAssocForm(true);
-  };
-
-  const handleCloseAssocForm = () => {
-    setShowAssocForm(false);
-    setAssocHopital("");
-    setAssocPlateau("");
-    setAssocFormError("");
-  };
-
-  const handleSubmitAssoc = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAssocFormError("");
-    setSubmittingAssoc(true);
-
+  const fetchPlateauxCatalogue = useCallback(async () => {
     try {
-      await hopitalPlateauTechniqueAPI.create({
-        hopital: parseInt(assocHopital),
-        plateau_technique: parseInt(assocPlateau),
-      });
-      handleCloseAssocForm();
-      fetchData();
-    } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as { response?: { data?: Record<string, string | string[]> } };
-        if (axiosError.response?.data) {
-          const data = axiosError.response.data;
-          let message = "Une erreur est survenue.";
-          if (data.non_field_errors) {
-            message = Array.isArray(data.non_field_errors)
-              ? data.non_field_errors[0]
-              : String(data.non_field_errors);
-          } else if (data.hopital) {
-            message = Array.isArray(data.hopital) ? data.hopital[0] : String(data.hopital);
-          } else if (data.plateau_technique) {
-            message = Array.isArray(data.plateau_technique)
-              ? data.plateau_technique[0]
-              : String(data.plateau_technique);
-          }
-          setAssocFormError(message);
-        }
-      } else {
-        setAssocFormError("Une erreur est survenue.");
+      const response = await plateauTechniqueAPI.getAll();
+      if (mountedRef.current) setAllPlateaux(response.data);
+    } catch { /* silent */ }
+  }, []);
+
+  const handleOpenManage = async (hopital: HopitalLight) => {
+    setSelectedHopital(hopital);
+    setAssociationsLoading(true);
+    setSaveSuccess(false);
+    setSaveError("");
+    setPendingItems([]);
+    setView("manage");
+    try {
+      const [assocRes] = await Promise.all([
+        plateauTechniqueAPI.getAssociations(hopital.id),
+        fetchPlateauxCatalogue(),
+      ]);
+      if (mountedRef.current) {
+        const existing = assocRes.data.plateaux;
+        const items: PendingItem[] = existing.map((a) => ({
+          id: a.plateau_technique,
+          nom: a.plateau_technique_nom,
+          isNew: false,
+          tempId: `existing-${a.plateau_technique}`,
+        }));
+        setPendingItems(items);
       }
-    } finally {
-      setSubmittingAssoc(false);
-    }
-  };
-
-  const handleDeleteAssoc = async () => {
-    if (!deleteAssocModal) return;
-    setDeletingAssoc(true);
-
-    try {
-      await hopitalPlateauTechniqueAPI.delete(deleteAssocModal.id);
-      setDeleteAssocModal(null);
-      fetchData();
     } catch {
-      setError("Erreur lors de la suppression de l'association.");
-      setDeleteAssocModal(null);
+      if (mountedRef.current) setSaveError("Erreur lors du chargement des associations.");
     } finally {
-      setDeletingAssoc(false);
+      if (mountedRef.current) setAssociationsLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="admin-dark-page">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-8">Plateau technique</h1>
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 text-center py-12 text-slate-600 dark:text-slate-400">
-          Chargement...
-        </div>
-      </div>
-    );
-  }
+  const handleOpenDetail = async (hopital: HopitalLight) => {
+    setSelectedHopital(hopital);
+    setDetailLoading(true);
+    setDetailError("");
+    setView("detail");
+    try {
+      const response = await plateauTechniqueAPI.getAssociations(hopital.id);
+      if (mountedRef.current) setDetailData(response.data);
+    } catch {
+      if (mountedRef.current) setDetailError("Erreur lors du chargement des données.");
+    } finally {
+      if (mountedRef.current) setDetailLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setView("list");
+    setSelectedHopital(null);
+    setPendingItems([]);
+    setDetailData(null);
+    setSaveSuccess(false);
+    setSaveError("");
+  };
+
+  const handleAddItem = () => {
+    const newItem: PendingItem = {
+      nom: "",
+      isNew: true,
+      tempId: `new-${Date.now()}`,
+    };
+    setPendingItems([...pendingItems, newItem]);
+  };
+
+  const handleRemoveItem = (tempId: string) => {
+    setPendingItems(pendingItems.filter((item) => item.tempId !== tempId));
+  };
+
+  const handleItemChange = (tempId: string, value: string) => {
+    setPendingItems(pendingItems.map((item) => 
+      item.tempId === tempId ? { ...item, nom: value.trim() } : item
+    ));
+  };
+
+  const handleSave = async () => {
+    if (!selectedHopital) return;
+    
+    const emptyItems = pendingItems.filter(item => !item.nom.trim());
+    if (emptyItems.length > 0) {
+      setSaveError("Veuillez remplir tous les champs ou les supprimer.");
+      return;
+    }
+
+    const names = pendingItems.map(item => item.nom.toLowerCase());
+    const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
+    if (duplicates.length > 0) {
+      setSaveError("Certains plateaux techniques sont en double. Veuillez les supprimer.");
+      return;
+    }
+
+    setSaving(true);
+    setSaveError("");
+    setSaveSuccess(false);
+    
+    try {
+      const newItems = pendingItems.filter(item => item.isNew && item.nom.trim());
+      const createdPlateaux: PlateauTechnique[] = [];
+      
+      for (const item of newItems) {
+        try {
+          const response = await plateauTechniqueAPI.create({ nom: item.nom.trim() });
+          createdPlateaux.push(response.data);
+        } catch (err: any) {
+          if (err.response?.status === 400) {
+            const existing = allPlateaux.find(p => p.nom.toLowerCase() === item.nom.toLowerCase());
+            if (existing) {
+              createdPlateaux.push(existing);
+            } else {
+              throw err;
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      const existingIds = pendingItems
+        .filter(item => !item.isNew && item.id)
+        .map(item => item.id!);
+      
+      const newIds = createdPlateaux.map(p => p.id);
+      const allIds = [...existingIds, ...newIds];
+
+      await plateauTechniqueAPI.bulkSetAssociations(selectedHopital.id, allIds);
+      
+      if (mountedRef.current) {
+        setSaveSuccess(true);
+        await fetchPlateauxCatalogue();
+        const res = await plateauTechniqueAPI.getAssociations(selectedHopital.id);
+        if (mountedRef.current) {
+          setDetailData(res.data);
+          const items: PendingItem[] = res.data.plateaux.map((a) => ({
+            id: a.plateau_technique,
+            nom: a.plateau_technique_nom,
+            isNew: false,
+            tempId: `existing-${a.plateau_technique}`,
+          }));
+          setPendingItems(items);
+        }
+      }
+    } catch (err: unknown) {
+      if (mountedRef.current) {
+        let message = "Erreur lors de l'enregistrement.";
+        if (err && typeof err === "object" && "response" in err) {
+          const axiosErr = err as { response?: { data?: any } };
+          if (axiosErr.response?.data) {
+            const data = axiosErr.response.data;
+            if (typeof data === 'object') {
+              message = Object.values(data).flat().join(' ') || message;
+            }
+          }
+        }
+        setSaveError(message);
+      }
+    } finally {
+      if (mountedRef.current) setSaving(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!selectedHopital) return;
+    try {
+      const response = await plateauTechniqueAPI.exportExcel(selectedHopital.id);
+      if (!response.ok) throw new Error("Export failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `plateau_technique_${selectedHopital.nom.replace(/\s+/g, "_")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setSaveError("Erreur lors de l'export Excel.");
+    }
+  };
+
+  const handleImportExcel = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const XLSX = await import('xlsx');
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        try {
+          const data = event.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows: any[] = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          const dataRows = rows.slice(1);
+          
+          const plateauNames = dataRows
+            .map(row => row[1])
+            .filter(name => name && typeof name === 'string' && name.trim())
+            .map(name => String(name).trim());
+          
+          const uniqueNames = Array.from(new Set(plateauNames));
+          
+          const newItems: PendingItem[] = uniqueNames.map(nom => ({
+            nom,
+            isNew: true,
+            tempId: `imported-${Date.now()}-${Math.random()}`,
+          }));
+          
+          setPendingItems(newItems);
+          setSaveSuccess(false);
+          setSaveError("");
+        } catch (err) {
+          setSaveError("Erreur lors de la lecture du fichier Excel. Vérifiez le format.");
+        }
+      };
+      
+      reader.readAsBinaryString(file);
+    } catch (err) {
+      setSaveError("Erreur lors de l'import du fichier Excel.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const inputClass =
+    "w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-colors";
 
   return (
-    <div className="admin-dark-page">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Plateau technique</h1>
-        <p className="mt-2 text-slate-600">
-          Gestion du plateau technique et de ses associations avec les hôpitaux
-        </p>
-      </div>
-
-      {error && (
-        <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg text-sm">
-          <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
-          <span className="flex-1">{error}</span>
-          <button
-            onClick={() => setError("")}
-            className="text-slate-600 hover:text-slate-800 transition-colors"
-            aria-label="Fermer"
-          >
-            <XIcon className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      <div className="mb-6 flex gap-4 sm:gap-6 border-b border-slate-200 overflow-x-auto">
-        <button
-          onClick={() => setTab("catalogue")}
-          className={`pb-3 px-1 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-            tab === "catalogue"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Catalogue ({plateaux.length})
-        </button>
-        <button
-          onClick={() => setTab("associations")}
-          className={`pb-3 px-1 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-            tab === "associations"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Associations hôpital-plateau ({associations.length})
-        </button>
-      </div>
-
-      {tab === "catalogue" && (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Liste des éléments ({plateaux.length})
-            </h2>
-            <button
-              onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Ajouter un élément
-            </button>
+    <div>
+      {view === "list" && (
+        <>
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Plateau Technique</h1>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              Gestion des plateaux techniques disponibles par hôpital
+            </p>
           </div>
 
-          {plateaux.length === 0 ? (
-            <div className="text-center py-12 text-slate-600">
-              Aucun élément de plateau technique enregistré.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Nom
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {plateaux.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                        {item.nom}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="inline-flex items-center gap-4">
-                          <button
-                            onClick={() => handleOpenEdit(item)}
-                            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                          >
-                            <EditIcon className="w-4 h-4" />
-                            Modifier
-                          </button>
-                          <button
-                            onClick={() => setDeleteModal(item)}
-                            className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 font-medium transition-colors"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                            Supprimer
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "associations" && (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Associations ({associations.length})
-            </h2>
-            <button
-              onClick={handleOpenAssocForm}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Ajouter une association
-            </button>
-          </div>
-
-          {associations.length === 0 ? (
-            <div className="text-center py-12 text-slate-600">
-              Aucune association enregistrée.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Hôpital
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Plateau technique
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {associations.map((assoc) => (
-                    <tr key={assoc.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                        {assoc.hopital_nom}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                        {assoc.plateau_technique_nom}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <button
-                          onClick={() => setDeleteAssocModal(assoc)}
-                          className="inline-flex items-center gap-1.5 text-red-600 hover:text-red-800 font-medium transition-colors"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                          Supprimer
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingItem ? "Modifier l'élément" : "Ajouter un élément"}
-              </h3>
-              <button
-                type="button"
-                onClick={handleCloseForm}
-                className="text-slate-600 hover:text-slate-800 transition-colors"
-                aria-label="Fermer"
-              >
-                <XIcon className="w-5 h-5" />
+          {hopitauxError && (
+            <div className="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm">
+              <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <span className="flex-1">{hopitauxError}</span>
+              <button onClick={() => setHopitauxError("")} className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                <XIcon className="w-4 h-4" />
               </button>
             </div>
+          )}
 
-            <form onSubmit={handleSubmit} className="px-6 py-4">
-              {formError && (
-                <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
-                  <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
-                  <span>{formError}</span>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Liste des hôpitaux
+                  </h2>
                 </div>
-              )}
+                <div className="relative w-full sm:w-80">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Rechercher un hôpital..."
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
 
-              <div className="mb-4">
-                <label htmlFor="nom" className="block text-sm font-medium text-slate-700 mb-1">
-                  Nom *
-                </label>
+            {hopitauxLoading ? (
+              <div className="text-center py-16 text-slate-500 dark:text-slate-400">Chargement...</div>
+            ) : hopitaux.length === 0 ? (
+              <div className="text-center py-16 text-slate-500 dark:text-slate-400">Aucun hôpital trouvé.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                  <thead className="bg-slate-50 dark:bg-slate-700/50">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Hôpital</th>
+                      <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {hopitaux.map((h) => (
+                      <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-900 dark:text-slate-100">{h.nom}</td>
+                        <td className="px-4 sm:px-6 py-4 text-right text-sm">
+                          <div className="inline-flex items-center gap-3">
+                            <button
+                              onClick={() => handleOpenManage(h)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Gérer
+                            </button>
+                            <button
+                              onClick={() => handleOpenDetail(h)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                            >
+                              Détail
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page <= 1}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Précédent
+                </button>
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Page {page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page >= totalPages}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Suivant
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {view === "manage" && selectedHopital && (
+        <>
+          <div className="mb-8">
+            <button
+              onClick={handleBack}
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors"
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+              Retour
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
+              Gérer le plateau technique
+            </h1>
+            <p className="mt-2 text-lg text-blue-600 dark:text-blue-400 font-medium">
+              {selectedHopital.nom}
+            </p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Ajoutez les plateaux techniques disponibles dans cet hôpital. Vous pouvez en ajouter plusieurs avant d&apos;enregistrer.
+            </p>
+          </div>
+
+          {saveSuccess && (
+            <div className="mb-4 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 p-4 rounded-lg text-sm">
+              <span>Les associations ont été enregistrées avec succès.</span>
+            </div>
+          )}
+
+          {saveError && (
+            <div className="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm">
+              <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <span className="flex-1">{saveError}</span>
+              <button onClick={() => setSaveError("")} className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Plateaux techniques disponibles
+              </h2>
+              <div className="flex gap-2">
                 <input
-                  id="nom"
-                  type="text"
-                  value={nom}
-                  onChange={(e) => setNom(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="Ex: Scanner, IRM, Échographe..."
-                  autoFocus
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
+                <button
+                  onClick={handleImportExcel}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <UploadIcon className="w-4 h-4" />
+                  Importer Excel
+                </button>
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+            {associationsLoading ? (
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400">Chargement...</div>
+            ) : (
+              <>
+                {pendingItems.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                    Aucun plateau technique n&apos;est actuellement associé à cet hôpital.
+                  </div>
+                ) : (
+                  <div className="space-y-3 mb-6">
+                    {pendingItems.map((item) => (
+                      <div key={item.tempId} className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          value={item.nom}
+                          onChange={(e) => handleItemChange(item.tempId, e.target.value)}
+                          placeholder="Nom du plateau technique"
+                          className={inputClass}
+                          readOnly={!item.isNew}
+                        />
+                        <button
+                          onClick={() => handleRemoveItem(item.tempId)}
+                          className="shrink-0 p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                          aria-label="Retirer"
+                        >
+                          <XIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <button
-                  type="button"
-                  onClick={handleCloseForm}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                  onClick={handleAddItem}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-6"
                 >
-                  Annuler
+                  <PlusIcon className="w-4 h-4" />
+                  + Ajouter un plateau technique
                 </button>
-                <button
-                  type="submit"
-                  disabled={submitting || !nom.trim()}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {submitting
-                    ? "Enregistrement..."
-                    : editingItem
-                    ? "Enregistrer"
-                    : "Créer"}
-                </button>
-              </div>
-            </form>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {saving ? "Enregistrement..." : "Enregistrer"}
+                  </button>
+                  <button
+                    onClick={handleExportExcel}
+                    disabled={pendingItems.length === 0}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                  >
+                    <DownloadIcon className="w-4 h-4" />
+                    Exporter Excel
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        </>
       )}
 
-      {deleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Confirmer la suppression
-              </h3>
-              <button
-                type="button"
-                onClick={() => setDeleteModal(null)}
-                className="text-slate-600 hover:text-slate-800 transition-colors"
-                aria-label="Fermer"
-              >
-                <XIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertIcon className="w-5 h-5 text-red-600" />
-                </div>
-                <p className="pt-2 text-sm text-slate-600">
-                  Êtes-vous sûr de vouloir supprimer l&apos;élément{" "}
-                  <strong className="font-semibold text-slate-900">&laquo; {deleteModal.nom} &raquo;</strong> ?
-                </p>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteModal(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <TrashIcon className="w-4 h-4" />
-                {deleting ? "Suppression..." : "Supprimer"}
-              </button>
-            </div>
+      {view === "detail" && selectedHopital && (
+        <>
+          <div className="mb-8">
+            <button
+              onClick={handleBack}
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors"
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+              Retour
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
+              Détail du plateau technique
+            </h1>
+            <p className="mt-2 text-lg text-blue-600 dark:text-blue-400 font-medium">
+              {selectedHopital.nom}
+            </p>
           </div>
-        </div>
-      )}
 
-      {showAssocForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Ajouter une association
-              </h3>
-              <button
-                type="button"
-                onClick={handleCloseAssocForm}
-                className="text-slate-600 hover:text-slate-800 transition-colors"
-                aria-label="Fermer"
-              >
-                <XIcon className="w-5 h-5" />
-              </button>
+          {detailError && (
+            <div className="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-lg text-sm">
+              <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <span className="flex-1">{detailError}</span>
             </div>
+          )}
 
-            <form onSubmit={handleSubmitAssoc} className="px-6 py-4">
-              {assocFormError && (
-                <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
-                  <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
-                  <span>{assocFormError}</span>
-                </div>
-              )}
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+              Plateaux techniques disponibles
+            </h2>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Hôpital *
-                </label>
-                <select
-                  value={assocHopital}
-                  onChange={(e) => setAssocHopital(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <option value="">Sélectionner un hôpital</option>
-                  {hopitaux.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.nom}
-                    </option>
-                  ))}
-                </select>
+            {detailLoading ? (
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400">Chargement...</div>
+            ) : detailData && detailData.plateaux.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                Aucun plateau technique n&apos;est actuellement associé à cet hôpital.
               </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Élément du plateau technique *
-                </label>
-                <select
-                  value={assocPlateau}
-                  onChange={(e) => setAssocPlateau(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-slate-900 bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <option value="">Sélectionner un élément</option>
-                  {plateaux.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nom}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleCloseAssocForm}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingAssoc || !assocHopital || !assocPlateau}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {submittingAssoc ? "Création..." : "Créer l'association"}
-                </button>
-              </div>
-            </form>
+            ) : detailData ? (
+              <ul className="space-y-2">
+                {detailData.plateaux.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
+                  >
+                    <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {a.plateau_technique_nom}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
-        </div>
-      )}
-
-      {deleteAssocModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm dark:bg-slate-900/60" aria-hidden="true"></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Confirmer la suppression
-              </h3>
-              <button
-                type="button"
-                onClick={() => setDeleteAssocModal(null)}
-                className="text-slate-600 hover:text-slate-800 transition-colors"
-                aria-label="Fermer"
-              >
-                <XIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertIcon className="w-5 h-5 text-red-600" />
-                </div>
-                <p className="pt-2 text-sm text-slate-600">
-                  Supprimer l&apos;association{" "}
-                  <strong className="font-semibold text-slate-900">
-                    &laquo; {deleteAssocModal.hopital_nom} ↔ {deleteAssocModal.plateau_technique_nom} &raquo;
-                  </strong> ?
-                </p>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteAssocModal(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDeleteAssoc}
-                disabled={deletingAssoc}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <TrashIcon className="w-4 h-4" />
-                {deletingAssoc ? "Suppression..." : "Supprimer"}
-              </button>
-            </div>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

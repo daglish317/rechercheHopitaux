@@ -37,7 +37,12 @@ export default function PublicHeader({
               className="h-9 w-auto"
             />
           </Link>
-          
+          <Link
+            href="/"
+            className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-teal-50 hover:text-teal-700 sm:inline-flex"
+          >
+            Accueil
+          </Link>
         </div>
 
         <div className="relative flex-1">
@@ -101,7 +106,7 @@ export default function PublicHeader({
                 href="/inscription"
                 className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700"
               >
-                S&apos;inscrire
+                Inscription
               </Link>
             </>
           )}

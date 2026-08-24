@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from hopital.models import Hopital
+
 from .models import ExamenMedical, HopitalExamen
 
 
@@ -51,3 +54,33 @@ class HopitalExamenSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+
+class HopitalLightSerializer(serializers.ModelSerializer):
+    type_hopital_nom = serializers.CharField(source="type_hopital.nom", read_only=True)
+
+    class Meta:
+        model = Hopital
+        fields = ["id", "nom", "type_hopital_nom"]
+
+
+class BulkHopitalExamenSerializer(serializers.Serializer):
+    examens = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=True,
+        help_text="Liste des IDs d'examens à associer.",
+    )
+
+    def validate_examens(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError(
+                "Un examen ne peut être associé qu'une seule fois au même hôpital."
+            )
+
+        existing = ExamenMedical.objects.filter(id__in=value).values_list("id", flat=True)
+        missing = set(value) - set(existing)
+        if missing:
+            raise serializers.ValidationError(
+                f"Examens introuvables : {', '.join(str(i) for i in sorted(missing))}"
+            )
+        return value

@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import PlateauTechnique, HopitalPlateauTechnique
+
+from hopital.models import Hopital
+
+from .models import HopitalPlateauTechnique, PlateauTechnique
 
 
 class PlateauTechniqueSerializer(serializers.ModelSerializer):
@@ -65,3 +68,35 @@ class HopitalPlateauTechniqueSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+
+class HopitalLightSerializer(serializers.ModelSerializer):
+    type_hopital_nom = serializers.CharField(source="type_hopital.nom", read_only=True)
+
+    class Meta:
+        model = Hopital
+        fields = ["id", "nom", "type_hopital_nom"]
+
+
+class BulkHopitalPlateauTechniqueSerializer(serializers.Serializer):
+    plateaux = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=True,
+        help_text="Liste des IDs de plateaux techniques à associer.",
+    )
+
+    def validate_plateaux(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError(
+                "Un plateau technique ne peut être associé qu'une seule fois au même hôpital."
+            )
+
+        existing = PlateauTechnique.objects.filter(id__in=value).values_list(
+            "id", flat=True
+        )
+        missing = set(value) - set(existing)
+        if missing:
+            raise serializers.ValidationError(
+                f"Plateaux techniques introuvables : {', '.join(str(i) for i in sorted(missing))}"
+            )
+        return value
