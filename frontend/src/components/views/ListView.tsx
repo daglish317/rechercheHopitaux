@@ -12,6 +12,7 @@ interface ListViewProps {
   hospitals: HopitalSearchResult[];
   selectedId: number | null;
   onSelect: (hospital: HopitalSearchResult) => void;
+  onShowDetails: (hospitalId: number) => void;
   hasUserPosition: boolean;
 }
 
@@ -19,6 +20,7 @@ export default function ListView({
   hospitals,
   selectedId,
   onSelect,
+  onShowDetails,
   hasUserPosition,
 }: ListViewProps) {
   if (hospitals.length === 0) {
@@ -90,13 +92,12 @@ export default function ListView({
             </div>
             <div className="space-y-3">
               {sortedLocated.map((hospital) => (
-                <button
+                <div
                   key={hospital.id}
-                  onClick={() => onSelect(hospital)}
-                  className={`w-full text-left bg-white dark:bg-slate-800 rounded-xl p-5 border-2 transition-all hover:shadow-lg ${
+                  className={`bg-white dark:bg-slate-800 rounded-xl p-5 border-2 transition-all ${
                     selectedId === hospital.id
                       ? "border-blue-500 shadow-lg ring-2 ring-blue-200 dark:ring-blue-900"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                      : "border-slate-200 dark:border-slate-700"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -118,7 +119,7 @@ export default function ListView({
                     )}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 mb-4">
                     {/* Adresse */}
                     <div className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                       <MapPinIcon className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
@@ -133,7 +134,14 @@ export default function ListView({
                       </div>
                     )}
                   </div>
-                </button>
+
+                  <button
+                    onClick={() => onShowDetails(hospital.id)}
+                    className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Voir les détails
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -150,13 +158,12 @@ export default function ListView({
             </div>
             <div className="space-y-3">
               {notLocated.map((hospital) => (
-                <button
+                <div
                   key={hospital.id}
-                  onClick={() => onSelect(hospital)}
-                  className={`w-full text-left bg-white dark:bg-slate-800 rounded-xl p-5 border-2 transition-all hover:shadow-lg ${
+                  className={`bg-white dark:bg-slate-800 rounded-xl p-5 border-2 transition-all ${
                     selectedId === hospital.id
                       ? "border-blue-500 shadow-lg ring-2 ring-blue-200 dark:ring-blue-900"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                      : "border-slate-200 dark:border-slate-700"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -173,7 +180,7 @@ export default function ListView({
                     </span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 mb-4">
                     {/* Adresse */}
                     <div className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                       <MapPinIcon className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
@@ -188,7 +195,14 @@ export default function ListView({
                       </div>
                     )}
                   </div>
-                </button>
+
+                  <button
+                    onClick={() => onShowDetails(hospital.id)}
+                    className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Voir les détails
+                  </button>
+                </div>
               ))}
             </div>
           </div>

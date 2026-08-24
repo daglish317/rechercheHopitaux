@@ -14,6 +14,7 @@ interface NearbyViewProps {
   notLocatedHospitals: HopitalSearchResult[];
   selectedId: number | null;
   onSelect: (hospital: HopitalSearchResult) => void;
+  onShowDetails: (hospitalId: number) => void;
   userPosition: [number, number] | null;
 }
 
@@ -24,6 +25,7 @@ export default function NearbyView({
   notLocatedHospitals,
   selectedId,
   onSelect,
+  onShowDetails,
   userPosition,
 }: NearbyViewProps) {
   const [selectedRadius, setSelectedRadius] = useState<RadiusOption>(20);
@@ -99,10 +101,9 @@ export default function NearbyView({
             </div>
             <div className="space-y-3">
               {filteredLocated.map((hospital) => (
-                <button
+                <div
                   key={hospital.id}
-                  onClick={() => onSelect(hospital)}
-                  className={`w-full text-left bg-white dark:bg-slate-800 rounded-xl p-4 border-2 transition-all hover:shadow-md ${
+                  className={`bg-white dark:bg-slate-800 rounded-xl p-4 border-2 transition-all ${
                     selectedId === hospital.id
                       ? "border-blue-500 shadow-md"
                       : "border-slate-200 dark:border-slate-700"
@@ -126,19 +127,26 @@ export default function NearbyView({
                   )}
 
                   {/* Adresse */}
-                  <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 mb-1">
                     <MapPinIcon className="w-3 h-3 shrink-0 mt-0.5" />
                     <span className="line-clamp-1">{hospital.adresse}</span>
                   </div>
 
                   {/* Téléphone */}
                   {hospital.telephone && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mt-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mb-3">
                       <PhoneIcon className="w-3 h-3 shrink-0" />
                       <span>{hospital.telephone}</span>
                     </div>
                   )}
-                </button>
+
+                  <button
+                    onClick={() => onShowDetails(hospital.id)}
+                    className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Voir les détails
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -171,10 +179,9 @@ export default function NearbyView({
             </div>
             <div className="space-y-3">
               {notLocatedHospitals.map((hospital) => (
-                <button
+                <div
                   key={hospital.id}
-                  onClick={() => onSelect(hospital)}
-                  className={`w-full text-left bg-white dark:bg-slate-800 rounded-xl p-4 border-2 transition-all hover:shadow-md ${
+                  className={`bg-white dark:bg-slate-800 rounded-xl p-4 border-2 transition-all ${
                     selectedId === hospital.id
                       ? "border-blue-500 shadow-md"
                       : "border-slate-200 dark:border-slate-700"
@@ -193,19 +200,26 @@ export default function NearbyView({
                   </p>
 
                   {/* Adresse */}
-                  <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 mb-1">
                     <MapPinIcon className="w-3 h-3 shrink-0 mt-0.5" />
                     <span className="line-clamp-1">{hospital.adresse}</span>
                   </div>
 
                   {/* Téléphone */}
                   {hospital.telephone && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mt-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mb-3">
                       <PhoneIcon className="w-3 h-3 shrink-0" />
                       <span>{hospital.telephone}</span>
                     </div>
                   )}
-                </button>
+
+                  <button
+                    onClick={() => onShowDetails(hospital.id)}
+                    className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Voir les détails
+                  </button>
+                </div>
               ))}
             </div>
           </div>

@@ -7,6 +7,7 @@ import DesktopTabs from "@/components/DesktopTabs";
 import MapView from "@/components/views/MapView";
 import NearbyView from "@/components/views/NearbyView";
 import ListView from "@/components/views/ListView";
+import HospitalDetailModal from "@/components/HospitalDetailModal";
 import { publicAPI, HopitalSearchResult, SearchResponse } from "@/lib/public";
 
 export type ViewMode = "map" | "nearby" | "list";
@@ -16,6 +17,7 @@ export default function Home() {
   const [locatedHospitals, setLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [notLocatedHospitals, setNotLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detailModalId, setDetailModalId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
@@ -129,6 +131,10 @@ export default function Home() {
     setSelectedId(hospital.id);
   }, []);
 
+  const handleShowDetails = useCallback((hospitalId: number) => {
+    setDetailModalId(hospitalId);
+  }, []);
+
   const handleViewChange = useCallback((view: ViewMode) => {
     setActiveView(view);
   }, []);
@@ -161,7 +167,17 @@ export default function Home() {
 
             {/* Contenu principal */}
             <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/10 mb-20 md:mb-0">
-              {loading ? (
+              {/* Bandeau de recherche */}
+              {hasSearched && searchQuery && (
+                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    Résultats pour <strong>&quot;{searchQuery}&quot;</strong> :{" "}
+                    <strong>{totalCount}</strong> {totalCount > 1 ? "hôpitaux trouvés" : "hôpital trouvé"}
+                  </p>
+                </div>
+              )}
+
+              <div className="h-full overflow-hidden">{loading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -210,6 +226,7 @@ export default function Home() {
                   notLocatedHospitals={notLocatedHospitals}
                   selectedId={selectedId}
                   onSelect={handleSelect}
+                  onShowDetails={handleShowDetails}
                   userPosition={userPosition}
                 />
               ) : (
@@ -217,9 +234,11 @@ export default function Home() {
                   hospitals={allHospitals}
                   selectedId={selectedId}
                   onSelect={handleSelect}
+                  onShowDetails={handleShowDetails}
                   hasUserPosition={userPosition !== null}
                 />
               )}
+              </div>
             </div>
           </div>
         </section>
@@ -233,6 +252,14 @@ export default function Home() {
         totalCount={totalCount}
         hasUserLocation={userPosition !== null}
       />
+
+      {/* Modal de détails */}
+      {detailModalId && (
+        <HospitalDetailModal
+          hospitalId={detailModalId}
+          onClose={() => setDetailModalId(null)}
+        />
+      )}
     </div>
   );
 }
