@@ -7,7 +7,74 @@ from django.shortcuts import get_object_or_404
 from math import radians, cos, sin, asin, sqrt
 
 from hopital.models import Hopital
+from maladie.models import Maladie
+from examen.models import ExamenMedical
+from plateau.models import PlateauTechnique
 from .serializers import HopitalSearchSerializer, HopitalDetailSerializer
+
+
+class SearchSuggestionsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        query = request.query_params.get("q", "").strip()
+        
+        if not query or len(query) < 2:
+            return Response({"suggestions": []}, status=status.HTTP_200_OK)
+        
+        suggestions = []
+        
+        # Rechercher dans les maladies
+        maladies = Maladie.objects.filter(
+            nom__icontains=query
+        ).values_list('nom', flat=True).distinct()[:3]
+        
+        for maladie in maladies:
+            suggestions.append({
+                "text": maladie,
+                "type": "maladie",
+                "icon": "virus"
+            })
+        
+        # Rechercher dans les examens
+        examens = ExamenMedical.objects.filter(
+            nom__icontains=query
+        ).values_list('nom', flat=True).distinct()[:3]
+        
+        for examen in examens:
+            suggestions.append({
+                "text": examen,
+                "type": "examen",
+                "icon": "clipboard"
+            })
+        
+        # Rechercher dans les plateaux techniques
+        plateaux = PlateauTechnique.objects.filter(
+            nom__icontains=query
+        ).values_list('nom', flat=True).distinct()[:3]
+        
+        for plateau in plateaux:
+            suggestions.append({
+                "text": plateau,
+                "type": "plateau",
+                "icon": "beaker"
+            })
+        
+        # Rechercher dans les hôpitaux
+        hopitaux = Hopital.objects.filter(
+            Q(nom__icontains=query) | Q(adresse__icontains=query),
+            statut="ACTIF"
+        ).values_list('nom', flat=True).distinct()[:3]
+        
+        for hopital in hopitaux:
+            suggestions.append({
+                "text": hopital,
+                "type": "hopital",
+                "icon": "hospital"
+            })
+        
+        # Limiter à 8 suggestions maximum
+        return Response({"suggestions": suggestions[:8]}, status=status.HTTP_200_OK)
 
 
 class HopitalSearchView(APIView):

@@ -18,14 +18,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   letter-spacing: 0;
 }
 
@@ -51,10 +51,23 @@ textarea {
 .leaflet-container {
   width: 100%;
   height: 100%;
+  z-index: 1;
 }
 
 .leaflet-control-zoom {
-  z-index: 1000;
+  z-index: 100;
+}
+
+.leaflet-popup-pane {
+  z-index: 700;
+}
+
+.leaflet-marker-pane {
+  z-index: 600;
+}
+
+.leaflet-tile-pane {
+  z-index: 2;
 }
 
 .leaflet-popup-content-wrapper {

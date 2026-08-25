@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import HopitalSearchView, HopitalPublicDetailView
+from .views import HopitalSearchView, HopitalPublicDetailView, SearchSuggestionsView
 
 urlpatterns = [
     path("search/", HopitalSearchView.as_view(), name="hopital-search"),
     path("search/hopitaux/<int:pk>/", HopitalPublicDetailView.as_view(), name="hopital-public-detail"),
+    path("search/suggestions/", SearchSuggestionsView.as_view(), name="search-suggestions"),
 ]

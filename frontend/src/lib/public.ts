@@ -38,6 +38,16 @@ export interface HopitalDetail {
   plateaux_techniques: string[];
 }
 
+export interface SearchSuggestion {
+  text: string;
+  type: "maladie" | "examen" | "plateau" | "hopital";
+  icon: string;
+}
+
+export interface SuggestionsResponse {
+  suggestions: SearchSuggestion[];
+}
+
 export const publicAPI = {
   search: (
     query: string,
@@ -54,4 +64,6 @@ export const publicAPI = {
   },
   getHopitalDetail: (id: number) =>
     api.get<HopitalDetail>(`/search/hopitaux/${id}/`),
+  getSuggestions: (query: string) =>
+    api.get<SuggestionsResponse>("/search/suggestions/", { params: { q: query } }),
 };

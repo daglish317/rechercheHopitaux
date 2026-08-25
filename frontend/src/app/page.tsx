@@ -9,6 +9,7 @@ import MapView from "@/components/views/MapView";
 import NearbyView from "@/components/views/NearbyView";
 import ListView from "@/components/views/ListView";
 import { publicAPI, HopitalSearchResult, SearchResponse } from "@/lib/public";
+import { searchHistory } from "@/lib/searchHistory";
 
 export type ViewMode = "map" | "nearby" | "list";
 
@@ -93,6 +94,7 @@ export default function Home() {
 
   const performSearch = useCallback(
     async (query: string, lat?: number, lon?: number) => {
+      console.log("performSearch called with:", { query, lat, lon, userPosition });
       const searchLat = lat !== undefined ? lat : userPosition?.[0];
       const searchLon = lon !== undefined ? lon : userPosition?.[1];
       
@@ -101,7 +103,9 @@ export default function Home() {
         setLoading(true);
         setHasSearched(false);
         try {
+          console.log("Fetching all hospitals...");
           const response = await publicAPI.search("", searchLat, searchLon, null);
+          console.log("All hospitals response:", response.data);
           setAllHospitals([...response.data.located, ...response.data.not_located]);
           setLocatedHospitals(response.data.located);
           setNotLocatedHospitals(response.data.not_located);
@@ -117,7 +121,11 @@ export default function Home() {
       setLoading(true);
       setHasSearched(true);
       
+      // Ajouter à l'historique de recherche
+      searchHistory.add(query);
+      
       try {
+        console.log("Searching for:", query);
         const response = await publicAPI.search(
           query,
           searchLat,
@@ -125,6 +133,7 @@ export default function Home() {
           null
         );
         
+        console.log("Search response:", response.data);
         setAllHospitals([...response.data.located, ...response.data.not_located]);
         setLocatedHospitals(response.data.located);
         setNotLocatedHospitals(response.data.not_located);
@@ -156,6 +165,7 @@ export default function Home() {
       }
 
       debounceRef.current = setTimeout(() => {
+        console.log("Performing search for:", value);
         performSearch(value);
       }, 400);
     },

@@ -1,8 +1,12 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { SearchIcon, MapPinIcon, LoginIcon, LogoutIcon } from "./Icons";
+import SearchDropdown from "./SearchDropdown";
+import { publicAPI, SearchSuggestion } from "@/lib/public";
+import { searchHistory, SearchHistoryItem } from "@/lib/searchHistory";
 
 interface PublicHeaderProps {
   searchQuery: string;
@@ -22,9 +26,102 @@ export default function PublicHeader({
   hasSearched = false,
 }: PublicHeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [history, setHistory] = useState<SearchHistoryItem[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const suggestionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Charger l'historique au montage
+  useEffect(() => {
+    setHistory(searchHistory.get());
+  }, []);
+
+  // Fermer le dropdown au clic extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Charger les suggestions quand l'utilisateur tape
+  useEffect(() => {
+    if (suggestionTimeoutRef.current) {
+      clearTimeout(suggestionTimeoutRef.current);
+    }
+
+    if (searchQuery.trim().length >= 2) {
+      setLoadingSuggestions(true);
+      suggestionTimeoutRef.current = setTimeout(async () => {
+        try {
+          console.log("Fetching suggestions for:", searchQuery);
+          const response = await publicAPI.getSuggestions(searchQuery);
+          console.log("Suggestions response:", response.data);
+          setSuggestions(response.data.suggestions);
+        } catch (error) {
+          console.error("Failed to fetch suggestions:", error);
+          setSuggestions([]);
+        } finally {
+          setLoadingSuggestions(false);
+        }
+      }, 300); // Debounce de 300ms
+    } else {
+      setSuggestions([]);
+      setLoadingSuggestions(false);
+    }
+
+    return () => {
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const handleSelectHistory = (text: string) => {
+    onSearchChange(text);
+    setShowDropdown(false);
+  };
+
+  const handleSelectSuggestion = (text: string) => {
+    onSearchChange(text);
+    searchHistory.add(text);
+    setHistory(searchHistory.get());
+    setShowDropdown(false);
+  };
+
+  const handleRemoveHistory = (text: string) => {
+    searchHistory.remove(text);
+    setHistory(searchHistory.get());
+  };
+
+  const handleClearHistory = () => {
+    searchHistory.clear();
+    setHistory([]);
+  };
+
+  const handleInputFocus = () => {
+    setShowDropdown(true);
+  };
+
+  const handleSearchChange = (value: string) => {
+    console.log("PublicHeader handleSearchChange:", value);
+    onSearchChange(value);
+    if (value.trim().length >= 2) {
+      setShowDropdown(true);
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 shadow-sm shadow-slate-900/5 backdrop-blur-xl">
+    <header className="sticky top-0 z-[1001] border-b border-slate-200 bg-white/95 shadow-sm shadow-slate-900/5 backdrop-blur-xl">
       <div className="mx-auto max-w-[1680px] px-3 py-3 sm:px-5 lg:px-7">
         <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
           <div className="flex items-center justify-between gap-3">
@@ -87,18 +184,32 @@ export default function PublicHeader({
             </div>
           </div>
 
-          <div className="relative w-full lg:mx-auto lg:max-w-2xl">
+          <div className="relative w-full lg:mx-auto lg:max-w-2xl" ref={searchContainerRef}>
             <SearchIcon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 sm:h-5 sm:w-5" />
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={handleInputFocus}
               placeholder="Rechercher un hôpital, une spécialité, un examen..."
               className="h-11 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-20 text-sm text-slate-900 shadow-sm shadow-slate-900/5 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/15 sm:h-12 sm:pr-24"
             />
             <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 sm:px-3 sm:text-xs">
               {hasSearched ? `${resultCount} résultat${resultCount > 1 ? "s" : ""}` : "Prêt"}
             </div>
+            
+            {showDropdown && (
+              <SearchDropdown
+                history={history}
+                suggestions={suggestions}
+                loading={loadingSuggestions}
+                onSelectHistory={handleSelectHistory}
+                onSelectSuggestion={handleSelectSuggestion}
+                onRemoveHistory={handleRemoveHistory}
+                onClearHistory={handleClearHistory}
+                showHistory={searchQuery.trim().length === 0}
+              />
+            )}
           </div>
 
           <div className="hidden items-center justify-end gap-2 lg:flex">
