@@ -4,6 +4,9 @@ from hopital.models import Hopital
 
 class HopitalSearchSerializer(serializers.ModelSerializer):
     type_hopital_nom = serializers.CharField(source="type_hopital.nom", read_only=True)
+    matched_maladies = serializers.ListField(child=serializers.CharField(), required=False)
+    matched_examens = serializers.ListField(child=serializers.CharField(), required=False)
+    matched_plateaux = serializers.ListField(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Hopital
@@ -15,6 +18,9 @@ class HopitalSearchSerializer(serializers.ModelSerializer):
             "telephone",
             "latitude",
             "longitude",
+            "matched_maladies",
+            "matched_examens",
+            "matched_plateaux",
         ]
 
 

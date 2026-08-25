@@ -7,6 +7,7 @@ import {
   HospitalIcon,
   NavigationIcon,
 } from "@/components/Icons";
+import MatchedItems from "@/components/MatchedItems";
 
 interface ListViewProps {
   hospitals: HopitalSearchResult[];
@@ -136,9 +137,15 @@ export default function ListView({
                     )}
                   </div>
 
+                  <MatchedItems
+                    maladies={hospital.matched_maladies}
+                    examens={hospital.matched_examens}
+                    plateaux={hospital.matched_plateaux}
+                  />
+
                   <button
                     onClick={() => onShowDetails(hospital.id)}
-                    className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                   >
                     Voir les détails
                   </button>
@@ -197,9 +204,15 @@ export default function ListView({
                     )}
                   </div>
 
+                  <MatchedItems
+                    maladies={hospital.matched_maladies}
+                    examens={hospital.matched_examens}
+                    plateaux={hospital.matched_plateaux}
+                  />
+
                   <button
                     onClick={() => onShowDetails(hospital.id)}
-                    className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                   >
                     Voir les détails
                   </button>

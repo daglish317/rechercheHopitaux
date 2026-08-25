@@ -8,6 +8,7 @@ import {
   AlertIcon,
   NavigationIcon,
 } from "@/components/Icons";
+import MatchedItems from "@/components/MatchedItems";
 
 interface NearbyViewProps {
   locatedHospitals: HopitalSearchResult[];
@@ -140,9 +141,16 @@ export default function NearbyView({
                     </div>
                   )}
 
+                  <MatchedItems
+                    maladies={hospital.matched_maladies}
+                    examens={hospital.matched_examens}
+                    plateaux={hospital.matched_plateaux}
+                    compact
+                  />
+
                   <button
                     onClick={() => onShowDetails(hospital.id)}
-                    className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="w-full bg-blue-600 text-white py-1.5 px-3 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
                   >
                     Voir les détails
                   </button>
@@ -213,9 +221,16 @@ export default function NearbyView({
                     </div>
                   )}
 
+                  <MatchedItems
+                    maladies={hospital.matched_maladies}
+                    examens={hospital.matched_examens}
+                    plateaux={hospital.matched_plateaux}
+                    compact
+                  />
+
                   <button
                     onClick={() => onShowDetails(hospital.id)}
-                    className="w-full bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="w-full bg-blue-600 text-white py-1.5 px-3 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
                   >
                     Voir les détails
                   </button>

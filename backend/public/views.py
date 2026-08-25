@@ -86,6 +86,35 @@ class HopitalSearchView(APIView):
         for hopital in hopitaux:
             serializer = HopitalSearchSerializer(hopital)
             data = serializer.data
+            
+            # Ajouter les éléments correspondants à la recherche
+            if query:
+                matched_maladies = []
+                matched_examens = []
+                matched_plateaux = []
+                
+                # Vérifier les maladies
+                for prise in hopital.prises_en_charge.all():
+                    if query.lower() in prise.maladie.nom.lower():
+                        matched_maladies.append(prise.maladie.nom)
+                
+                # Vérifier les examens
+                for exam in hopital.examens.all():
+                    if query.lower() in exam.examen.nom.lower():
+                        matched_examens.append(exam.examen.nom)
+                
+                # Vérifier les plateaux techniques
+                for plateau in hopital.plateaux_techniques.all():
+                    if query.lower() in plateau.plateau_technique.nom.lower():
+                        matched_plateaux.append(plateau.plateau_technique.nom)
+                
+                data["matched_maladies"] = matched_maladies
+                data["matched_examens"] = matched_examens
+                data["matched_plateaux"] = matched_plateaux
+            else:
+                data["matched_maladies"] = []
+                data["matched_examens"] = []
+                data["matched_plateaux"] = []
 
             # Si l'hôpital a des coordonnées GPS
             if hopital.latitude and hopital.longitude:

@@ -2,8 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import SimpleHeader from "@/components/SimpleHeader";
 import { publicAPI, HopitalDetail } from "@/lib/public";
+import {
+  MapPinIcon,
+  PhoneIcon,
+  HospitalIcon,
+  ArrowLeftIcon,
+} from "@/components/Icons";
 
 export default function HopitalDetailPage() {
   const params = useParams();
@@ -18,11 +24,16 @@ export default function HopitalDetailPage() {
     if (!id) return;
 
     setLoading(true);
+    setError("");
     try {
       const response = await publicAPI.getHopitalDetail(id);
+      console.log("Hopital data received:", response.data);
       setHopital(response.data);
-    } catch {
-      setError("Hôpital non trouvé.");
+    } catch (err: any) {
+      console.error("Error fetching hopital:", err);
+      console.error("Error response:", err.response);
+      const message = err.response?.data?.detail || err.response?.data?.message || err.message || "Hôpital non trouvé.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -37,18 +48,18 @@ export default function HopitalDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7fbfa]">
-        <header className="bg-white shadow-sm border-b border-teal-100 h-16 flex items-center px-6">
-          <Link href="/" className="text-xl font-bold text-teal-700">
-            Hopital
-          </Link>
-        </header>
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-slate-200 rounded w-1/3" />
-            <div className="h-4 bg-slate-200 rounded w-1/4" />
-            <div className="h-4 bg-slate-200 rounded w-1/2" />
-            <div className="h-32 bg-slate-200 rounded" />
+      <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
+        <SimpleHeader />
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 md:px-6 py-8">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
+              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-6">
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full" />
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -57,123 +68,248 @@ export default function HopitalDetailPage() {
 
   if (error || !hopital) {
     return (
-      <div className="min-h-screen bg-[#f7fbfa]">
-        <header className="bg-white shadow-sm border-b border-teal-100 h-16 flex items-center px-6">
-          <Link href="/" className="text-xl font-bold text-teal-700">
-            Hopital
-          </Link>
-        </header>
-        <div className="max-w-4xl mx-auto px-6 py-12 text-center">
-          <p className="text-slate-500 mb-4">{error || "Hôpital non trouvé."}</p>
-          <button
-            onClick={() => router.push("/")}
-            className="text-teal-700 hover:text-teal-800 font-medium"
-          >
-            Retour à la recherche
-          </button>
+      <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
+        <SimpleHeader />
+        <div className="flex-1 overflow-y-auto flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <HospitalIcon className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              Hôpital non trouvé
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              {error || "Désolé, nous n'avons pas pu trouver cet hôpital."}
+            </p>
+            <button
+              onClick={() => router.push("/")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              <ArrowLeftIcon className="w-4 h-4" />
+              Retour à la recherche
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7fbfa]">
-      <header className="bg-white shadow-sm border-b border-teal-100 h-16 flex items-center px-6">
-        <Link href="/" className="text-xl font-bold text-teal-700">
-          Hopital
-        </Link>
-      </header>
+    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
+      <SimpleHeader />
+      
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          {/* Bouton retour */}
+          <button
+            onClick={() => router.push("/")}
+            className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-6 font-medium transition-colors"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            Retour à la recherche
+          </button>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-teal-700 hover:text-teal-800 mb-6"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Retour à la recherche
-        </Link>
-
-        <div className="bg-white rounded-lg border border-teal-100 shadow-sm p-6 mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">{hopital.nom}</h1>
-          <span className="inline-block px-3 py-1 text-xs font-medium bg-teal-50 text-teal-700 rounded-full mb-4">
-            {hopital.type_hopital_nom}
-          </span>
-
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-slate-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="text-slate-700">{hopital.adresse}</span>
+          {/* Carte principale - Informations générales */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 md:p-8 mb-6 shadow-sm">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <HospitalIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  {hopital.nom}
+                </h1>
+                <span className="inline-block px-3 py-1 text-xs font-medium bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-full">
+                  {hopital.type_hopital_nom}
+                </span>
+              </div>
             </div>
 
-            {hopital.telephone && (
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            <div className="space-y-4">
+              {/* Adresse */}
+              <div className="flex items-start gap-3">
+                <MapPinIcon className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                    Adresse
+                  </p>
+                  <p className="text-slate-700 dark:text-slate-300">
+                    {hopital.adresse}
+                  </p>
+                </div>
+              </div>
+
+              {/* Téléphone */}
+              {hopital.telephone && (
+                <div className="flex items-start gap-3">
+                  <PhoneIcon className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                      Téléphone
+                    </p>
+                    <a
+                      href={`tel:${hopital.telephone}`}
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {hopital.telephone}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Localisation GPS */}
+              {hopital.latitude && hopital.longitude && (
+                <div className="flex items-start gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <svg
+                    className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                      Coordonnées GPS
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Lat: {hopital.latitude}, Lon: {hopital.longitude}
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps?q=${hopital.latitude},${hopital.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2"
+                    >
+                      Voir sur Google Maps
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Maladies prises en charge */}
+          {hopital.maladies.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Maladies prises en charge
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {hopital.maladies.length} maladie{hopital.maladies.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hopital.maladies.map((maladie, index) => (
+                  <span
+                    key={index}
+                    className="inline-block px-3 py-1.5 text-sm bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-lg font-medium"
+                  >
+                    {maladie}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Examens médicaux */}
+          {hopital.examens.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Examens médicaux disponibles
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {hopital.examens.length} examen{hopital.examens.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hopital.examens.map((examen, index) => (
+                  <span
+                    key={index}
+                    className="inline-block px-3 py-1.5 text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-lg font-medium"
+                  >
+                    {examen}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Plateau technique */}
+          {hopital.plateaux_techniques.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Plateau technique
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {hopital.plateaux_techniques.length} équipement{hopital.plateaux_techniques.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hopital.plateaux_techniques.map((plateau, index) => (
+                  <span
+                    key={index}
+                    className="inline-block px-3 py-1.5 text-sm bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-medium"
+                  >
+                    {plateau}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Message si aucune information supplémentaire */}
+          {hopital.maladies.length === 0 &&
+            hopital.examens.length === 0 &&
+            hopital.plateaux_techniques.length === 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 text-center">
+                <svg className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-slate-700">{hopital.telephone}</span>
+                <p className="text-amber-800 dark:text-amber-300 font-medium mb-1">
+                  Informations limitées
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  Les détails sur les services de cet hôpital ne sont pas encore disponibles.
+                </p>
               </div>
             )}
-          </div>
         </div>
-
-        {hopital.maladies.length > 0 && (
-          <div className="bg-white rounded-lg border border-teal-100 shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Maladies prises en charge
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {hopital.maladies.map((maladie, index) => (
-                <span
-                  key={index}
-                  className="inline-block px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-full"
-                >
-                  {maladie}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {hopital.examens.length > 0 && (
-          <div className="bg-white rounded-lg border border-teal-100 shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Examens médicaux
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {hopital.examens.map((examen, index) => (
-                <span
-                  key={index}
-                  className="inline-block px-3 py-1 text-sm bg-teal-50 text-teal-700 rounded-full"
-                >
-                  {examen}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {hopital.plateaux_techniques.length > 0 && (
-          <div className="bg-white rounded-lg border border-teal-100 shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Plateau technique
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {hopital.plateaux_techniques.map((plateau, index) => (
-                <span
-                  key={index}
-                  className="inline-block px-3 py-1 text-sm bg-amber-50 text-amber-700 rounded-full"
-                >
-                  {plateau}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

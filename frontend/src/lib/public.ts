@@ -10,6 +10,9 @@ export interface HopitalSearchResult {
   longitude: string | null;
   distance_km: number | null;
   distance_text: string | null;
+  matched_maladies: string[];
+  matched_examens: string[];
+  matched_plateaux: string[];
 }
 
 export interface SearchResponse {
@@ -50,5 +53,5 @@ export const publicAPI = {
     return api.get<SearchResponse>("/search/", { params });
   },
   getHopitalDetail: (id: number) =>
-    api.get<HopitalDetail>(`/hopitaux/${id}/`),
+    api.get<HopitalDetail>(`/search/hopitaux/${id}/`),
 };

@@ -1,24 +1,24 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import PublicHeader from "@/components/PublicHeader";
 import MobileNavigation from "@/components/MobileNavigation";
 import DesktopTabs from "@/components/DesktopTabs";
 import MapView from "@/components/views/MapView";
 import NearbyView from "@/components/views/NearbyView";
 import ListView from "@/components/views/ListView";
-import HospitalDetailModal from "@/components/HospitalDetailModal";
 import { publicAPI, HopitalSearchResult, SearchResponse } from "@/lib/public";
 
 export type ViewMode = "map" | "nearby" | "list";
 
 export default function Home() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [allHospitals, setAllHospitals] = useState<HopitalSearchResult[]>([]);
   const [locatedHospitals, setLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [notLocatedHospitals, setNotLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [detailModalId, setDetailModalId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
@@ -167,8 +167,8 @@ export default function Home() {
   }, []);
 
   const handleShowDetails = useCallback((hospitalId: number) => {
-    setDetailModalId(hospitalId);
-  }, []);
+    router.push(`/hopital/${hospitalId}`);
+  }, [router]);
 
   const handleViewChange = useCallback((view: ViewMode) => {
     setActiveView(view);
@@ -262,14 +262,6 @@ export default function Home() {
         totalCount={totalCount}
         hasUserLocation={userPosition !== null}
       />
-
-      {/* Modal de détails */}
-      {detailModalId && (
-        <HospitalDetailModal
-          hospitalId={detailModalId}
-          onClose={() => setDetailModalId(null)}
-        />
-      )}
     </div>
   );
 }
