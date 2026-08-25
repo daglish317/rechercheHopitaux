@@ -44,39 +44,43 @@ class HopitalSearchView(APIView):
         user_lon = request.query_params.get("lon", None)
         max_distance = request.query_params.get("radius", None)
 
-        if not query:
-            return Response(
-                {"located": [], "not_located": [], "user_position": None},
-                status=status.HTTP_200_OK,
-            )
-
-        # Recherche insensible à la casse avec icontains
-        hopitaux = (
-            Hopital.objects.select_related("type_hopital")
-            .prefetch_related("examens__examen", "plateaux_techniques__plateau_technique", "prises_en_charge__maladie")
-            .filter(statut="ACTIF")
-            .filter(
-                Q(nom__icontains=query)
-                | Q(adresse__icontains=query)
-                | Q(type_hopital__nom__icontains=query)
-                | Q(examens__examen__nom__icontains=query)
-                | Q(plateaux_techniques__plateau_technique__nom__icontains=query)
-                | Q(prises_en_charge__maladie__nom__icontains=query)
-            )
-            .distinct()
-        )
-
-        results = {"located": [], "not_located": [], "user_position": None}
-
         # Si l'utilisateur a fourni sa position
         if user_lat and user_lon:
             try:
                 user_lat = float(user_lat)
                 user_lon = float(user_lon)
-                results["user_position"] = {"lat": user_lat, "lon": user_lon}
             except (ValueError, TypeError):
                 user_lat = None
                 user_lon = None
+
+        # Si pas de recherche, retourner tous les hôpitaux actifs
+        if not query:
+            hopitaux = (
+                Hopital.objects.select_related("type_hopital")
+                .prefetch_related("examens__examen", "plateaux_techniques__plateau_technique", "prises_en_charge__maladie")
+                .filter(statut="ACTIF")
+            )
+        else:
+            # Recherche insensible à la casse avec icontains
+            hopitaux = (
+                Hopital.objects.select_related("type_hopital")
+                .prefetch_related("examens__examen", "plateaux_techniques__plateau_technique", "prises_en_charge__maladie")
+                .filter(statut="ACTIF")
+                .filter(
+                    Q(nom__icontains=query)
+                    | Q(adresse__icontains=query)
+                    | Q(type_hopital__nom__icontains=query)
+                    | Q(examens__examen__nom__icontains=query)
+                    | Q(plateaux_techniques__plateau_technique__nom__icontains=query)
+                    | Q(prises_en_charge__maladie__nom__icontains=query)
+                )
+                .distinct()
+            )
+
+        results = {"located": [], "not_located": [], "user_position": None}
+        
+        if user_lat and user_lon:
+            results["user_position"] = {"lat": user_lat, "lon": user_lon}
 
         # Traiter chaque hôpital
         for hopital in hopitaux:

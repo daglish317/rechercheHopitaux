@@ -14,22 +14,48 @@ export type ViewMode = "map" | "nearby" | "list";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [allHospitals, setAllHospitals] = useState<HopitalSearchResult[]>([]);
   const [locatedHospitals, setLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [notLocatedHospitals, setNotLocatedHospitals] = useState<HopitalSearchResult[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detailModalId, setDetailModalId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
   const [activeView, setActiveView] = useState<ViewMode>("map");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Charger tous les hôpitaux au démarrage
+  useEffect(() => {
+    const loadAllHospitals = async () => {
+      setLoading(true);
+      try {
+        const response = await publicAPI.search("", null, null, null);
+        setAllHospitals([...response.data.located, ...response.data.not_located]);
+        setLocatedHospitals(response.data.located);
+        setNotLocatedHospitals(response.data.not_located);
+      } catch (error) {
+        console.error("Erreur lors du chargement des hôpitaux:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllHospitals();
+  }, []);
 
   // Détecter la position de l'utilisateur au chargement
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserPosition([position.coords.latitude, position.coords.longitude]);
+          const pos: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setUserPosition(pos);
+          
+          // Recalculer les distances si on a déjà chargé les hôpitaux
+          if (allHospitals.length > 0) {
+            performSearch(searchQuery, pos[0], pos[1]);
+          }
         },
         () => {
           // Erreur silencieuse, l'utilisateur peut activer manuellement
@@ -67,11 +93,24 @@ export default function Home() {
 
   const performSearch = useCallback(
     async (query: string, lat?: number, lon?: number) => {
+      const searchLat = lat !== undefined ? lat : userPosition?.[0];
+      const searchLon = lon !== undefined ? lon : userPosition?.[1];
+      
+      // Si pas de recherche, afficher tous les hôpitaux
       if (!query.trim()) {
-        setLocatedHospitals([]);
-        setNotLocatedHospitals([]);
+        setLoading(true);
         setHasSearched(false);
-        setSelectedId(null);
+        try {
+          const response = await publicAPI.search("", searchLat, searchLon, null);
+          setAllHospitals([...response.data.located, ...response.data.not_located]);
+          setLocatedHospitals(response.data.located);
+          setNotLocatedHospitals(response.data.not_located);
+          setSelectedId(null);
+        } catch (error) {
+          console.error("Erreur:", error);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 
@@ -79,9 +118,6 @@ export default function Home() {
       setHasSearched(true);
       
       try {
-        const searchLat = lat !== undefined ? lat : userPosition?.[0];
-        const searchLon = lon !== undefined ? lon : userPosition?.[1];
-        
         const response = await publicAPI.search(
           query,
           searchLat,
@@ -89,16 +125,15 @@ export default function Home() {
           null
         );
         
+        setAllHospitals([...response.data.located, ...response.data.not_located]);
         setLocatedHospitals(response.data.located);
         setNotLocatedHospitals(response.data.not_located);
         setSelectedId(null);
         
         // Choisir automatiquement la meilleure vue
         if (response.data.located.length > 0) {
-          // S'il y a des hôpitaux localisés, afficher la carte par défaut
           setActiveView("map");
         } else if (response.data.not_located.length > 0) {
-          // Sinon afficher la liste
           setActiveView("list");
         }
       } catch (error) {
@@ -140,7 +175,7 @@ export default function Home() {
   }, []);
 
   const totalCount = locatedHospitals.length + notLocatedHospitals.length;
-  const allHospitals = [...locatedHospitals, ...notLocatedHospitals];
+  const displayHospitals = [...locatedHospitals, ...notLocatedHospitals];
 
   return (
     <div className="h-screen flex flex-col app-shell-bg overflow-hidden">
@@ -182,32 +217,7 @@ export default function Home() {
                   <div className="text-center">
                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-slate-600 dark:text-slate-400">
-                      Recherche en cours...
-                    </p>
-                  </div>
-                </div>
-              ) : !hasSearched ? (
-                <div className="h-full flex items-center justify-center px-6">
-                  <div className="text-center max-w-md">
-                    <svg
-                      className="w-20 h-20 text-slate-300 dark:text-slate-600 mx-auto mb-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Recherchez un hôpital
-                    </h3>
-                    <p className="text-slate-500 dark:text-slate-400">
-                      Utilisez la barre de recherche pour trouver des hôpitaux, des
-                      examens médicaux ou des plateaux techniques.
+                      {hasSearched ? "Recherche en cours..." : "Chargement de la carte..."}
                     </p>
                   </div>
                 </div>
@@ -231,7 +241,7 @@ export default function Home() {
                 />
               ) : (
                 <ListView
-                  hospitals={allHospitals}
+                  hospitals={displayHospitals}
                   selectedId={selectedId}
                   onSelect={handleSelect}
                   onShowDetails={handleShowDetails}
