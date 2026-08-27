@@ -24,6 +24,7 @@ interface PendingItem {
   nom: string;
   isNew: boolean;
   tempId: string;
+  isChecked?: boolean;
 }
 
 export default function PlateauTechniquePage() {
@@ -105,20 +106,25 @@ export default function PlateauTechniquePage() {
     setAssociationsLoading(true);
     setSaveSuccess(false);
     setSaveError("");
-    setPendingItems([]);
     setView("manage");
+    
     try {
-      const [assocRes] = await Promise.all([
+      const [assocRes, catalogueRes] = await Promise.all([
         plateauTechniqueAPI.getAssociations(hopital.id),
-        fetchPlateauxCatalogue(),
+        plateauTechniqueAPI.getAll(),
       ]);
+      
       if (mountedRef.current) {
-        const existing = assocRes.data.plateaux;
-        const items: PendingItem[] = existing.map((a) => ({
-          id: a.plateau_technique,
-          nom: a.plateau_technique_nom,
+        setAllPlateaux(catalogueRes.data);
+        const existingIds = assocRes.data.plateaux.map((a: any) => a.plateau_technique);
+        
+        // Créer la liste avec l'état coché/non coché
+        const items: PendingItem[] = catalogueRes.data.map((plateau: PlateauTechnique) => ({
+          id: plateau.id,
+          nom: plateau.nom,
           isNew: false,
-          tempId: `existing-${a.plateau_technique}`,
+          tempId: `plateau-${plateau.id}`,
+          isChecked: existingIds.includes(plateau.id),
         }));
         setPendingItems(items);
       }
@@ -172,70 +178,32 @@ export default function PlateauTechniquePage() {
     ));
   };
 
+  const handleToggleCheckbox = (tempId: string) => {
+    setPendingItems(pendingItems.map((item) => 
+      item.tempId === tempId ? { ...item, isChecked: !item.isChecked } : item
+    ));
+  };
+
   const handleSave = async () => {
     if (!selectedHopital) return;
-    
-    const emptyItems = pendingItems.filter(item => !item.nom.trim());
-    if (emptyItems.length > 0) {
-      setSaveError("Veuillez remplir tous les champs ou les supprimer.");
-      return;
-    }
-
-    const names = pendingItems.map(item => item.nom.toLowerCase());
-    const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
-    if (duplicates.length > 0) {
-      setSaveError("Certains plateaux techniques sont en double. Veuillez les supprimer.");
-      return;
-    }
 
     setSaving(true);
     setSaveError("");
     setSaveSuccess(false);
     
     try {
-      const newItems = pendingItems.filter(item => item.isNew && item.nom.trim());
-      const createdPlateaux: PlateauTechnique[] = [];
-      
-      for (const item of newItems) {
-        try {
-          const response = await plateauTechniqueAPI.create({ nom: item.nom.trim() });
-          createdPlateaux.push(response.data);
-        } catch (err: any) {
-          if (err.response?.status === 400) {
-            const existing = allPlateaux.find(p => p.nom.toLowerCase() === item.nom.toLowerCase());
-            if (existing) {
-              createdPlateaux.push(existing);
-            } else {
-              throw err;
-            }
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      const existingIds = pendingItems
-        .filter(item => !item.isNew && item.id)
+      const selectedIds = pendingItems
+        .filter(item => item.isChecked && item.id)
         .map(item => item.id!);
-      
-      const newIds = createdPlateaux.map(p => p.id);
-      const allIds = [...existingIds, ...newIds];
 
-      await plateauTechniqueAPI.bulkSetAssociations(selectedHopital.id, allIds);
+      await plateauTechniqueAPI.bulkSetAssociations(selectedHopital.id, selectedIds);
       
       if (mountedRef.current) {
         setSaveSuccess(true);
-        await fetchPlateauxCatalogue();
+        // Recharger pour avoir les données à jour
         const res = await plateauTechniqueAPI.getAssociations(selectedHopital.id);
         if (mountedRef.current) {
           setDetailData(res.data);
-          const items: PendingItem[] = res.data.plateaux.map((a) => ({
-            id: a.plateau_technique,
-            nom: a.plateau_technique_nom,
-            isNew: false,
-            tempId: `existing-${a.plateau_technique}`,
-          }));
-          setPendingItems(items);
         }
       }
     } catch (err: unknown) {
@@ -453,7 +421,7 @@ export default function PlateauTechniquePage() {
               {selectedHopital.nom}
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Ajoutez les plateaux techniques disponibles dans cet hôpital. Vous pouvez en ajouter plusieurs avant d&apos;enregistrer.
+              Cochez les plateaux techniques disponibles dans cet hôpital, puis enregistrez vos sélections.
             </p>
           </div>
 
@@ -478,22 +446,6 @@ export default function PlateauTechniquePage() {
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Plateaux techniques disponibles
               </h2>
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <button
-                  onClick={handleImportExcel}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <UploadIcon className="w-4 h-4" />
-                  Importer Excel
-                </button>
-              </div>
             </div>
 
             {associationsLoading ? (
@@ -502,39 +454,28 @@ export default function PlateauTechniquePage() {
               <>
                 {pendingItems.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
-                    Aucun plateau technique n&apos;est actuellement associé à cet hôpital.
+                    Aucun plateau technique disponible dans le référentiel.
                   </div>
                 ) : (
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
                     {pendingItems.map((item) => (
-                      <div key={item.tempId} className="flex items-center gap-3">
+                      <label
+                        key={item.tempId}
+                        className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-colors"
+                      >
                         <input
-                          type="text"
-                          value={item.nom}
-                          onChange={(e) => handleItemChange(item.tempId, e.target.value)}
-                          placeholder="Nom du plateau technique"
-                          className={inputClass}
-                          readOnly={!item.isNew}
+                          type="checkbox"
+                          checked={item.isChecked || false}
+                          onChange={() => handleToggleCheckbox(item.tempId)}
+                          className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                         />
-                        <button
-                          onClick={() => handleRemoveItem(item.tempId)}
-                          className="shrink-0 p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          aria-label="Retirer"
-                        >
-                          <XIcon className="w-5 h-5" />
-                        </button>
-                      </div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
+                          {item.nom}
+                        </span>
+                      </label>
                     ))}
                   </div>
                 )}
-
-                <button
-                  onClick={handleAddItem}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-6"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                  + Ajouter un plateau technique
-                </button>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <button
@@ -542,16 +483,11 @@ export default function PlateauTechniquePage() {
                     disabled={saving}
                     className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {saving ? "Enregistrement..." : "Enregistrer"}
+                    {saving ? "Enregistrement..." : "Enregistrer les sélections"}
                   </button>
-                  <button
-                    onClick={handleExportExcel}
-                    disabled={pendingItems.length === 0}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-                  >
-                    <DownloadIcon className="w-4 h-4" />
-                    Exporter Excel
-                  </button>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {pendingItems.filter(item => item.isChecked).length} plateau(x) technique(s) sélectionné(s)
+                  </span>
                 </div>
               </>
             )}

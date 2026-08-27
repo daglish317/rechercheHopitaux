@@ -229,3 +229,256 @@ class HopitalExamenExportExcelView(APIView):
             f'attachment; filename="examens_{hopital.nom.replace(" ", "_")}.xlsx"'
         )
         return response
+
+
+class ExamenMedicalAssociatedHopitauxView(APIView):
+    """List all hospitals associated with a specific examen."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def get(self, request, examen_id):
+        examen = get_object_or_404(ExamenMedical, pk=examen_id)
+        associations = HopitalExamen.objects.filter(examen=examen).select_related('hopital')
+        
+        hopitaux_data = []
+        for assoc in associations:
+            hopitaux_data.append({
+                'id': assoc.id,
+                'hopital': assoc.hopital.id,
+                'hopital_nom': assoc.hopital.nom,
+                'hopital_adresse': assoc.hopital.adresse,
+            })
+        
+        return Response(
+            {
+                "examen": ExamenMedicalSerializer(examen).data,
+                "hopitaux": hopitaux_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ExamenMedicalImportExcelView(APIView):
+    """Import examens from Excel file (nom only)."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request):
+        if 'file' not in request.FILES:
+            return Response(
+                {"error": "Aucun fichier fourni."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        file = request.FILES['file']
+        
+        if not file.name.endswith(('.xlsx', '.xls', '.csv')):
+            return Response(
+                {"error": "Format de fichier non supporté. Utilisez .xlsx, .xls ou .csv"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            import openpyxl
+            import pandas as pd
+            
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+            
+            if 'nom' not in df.columns and 'Nom' not in df.columns:
+                return Response(
+                    {"error": "Le fichier doit contenir une colonne 'nom' ou 'Nom'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            nom_column = 'Nom' if 'Nom' in df.columns else 'nom'
+            
+            created = 0
+            skipped = 0
+            
+            for index, row in df.iterrows():
+                nom = str(row[nom_column]).strip()
+                
+                if not nom or nom.lower() == 'nan':
+                    skipped += 1
+                    continue
+                
+                _, created_flag = ExamenMedical.objects.get_or_create(nom=nom)
+                
+                if created_flag:
+                    created += 1
+                else:
+                    skipped += 1
+            
+            return Response(
+                {
+                    "message": f"Import terminé avec succès.",
+                    "created": created,
+                    "skipped": skipped
+                },
+                status=status.HTTP_201_CREATED
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Erreur lors de l'import: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ExamenMedicalExportExcelView(APIView):
+    """Export all examens to Excel."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def get(self, request):
+        import openpyxl
+        
+        examens = ExamenMedical.objects.all().order_by('nom')
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Examens"
+        
+        ws.append(["Nom", "Nombre d'hôpitaux"])
+        
+        for examen in examens:
+            hopital_count = HopitalExamen.objects.filter(examen=examen).count()
+            ws.append([examen.nom, hopital_count])
+        
+        ws.column_dimensions['A'].width = 40
+        ws.column_dimensions['B'].width = 20
+        
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response['Content-Disposition'] = 'attachment; filename="examens_export.xlsx"'
+        return response
+
+
+class ExamenMedicalAssociateHopitauxView(APIView):
+    """Associate an examen to multiple hopitaux."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request, pk):
+        examen = get_object_or_404(ExamenMedical, pk=pk)
+        
+        hopital_ids = request.data.get('hopital_ids', [])
+        action = request.data.get('action', 'add')
+        
+        if not isinstance(hopital_ids, list):
+            return Response(
+                {"error": "hopital_ids doit être une liste."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if action == 'add':
+            created_count = 0
+            for hopital_id in hopital_ids:
+                try:
+                    hopital = Hopital.objects.get(pk=hopital_id)
+                    _, created = HopitalExamen.objects.get_or_create(
+                        hopital=hopital,
+                        examen=examen
+                    )
+                    if created:
+                        created_count += 1
+                except Hopital.DoesNotExist:
+                    continue
+            
+            return Response(
+                {
+                    "message": f"{created_count} nouvelle(s) association(s) créée(s).",
+                    "examen": examen.nom,
+                    "total_hopitaux": HopitalExamen.objects.filter(examen=examen).count()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        elif action == 'remove':
+            deleted_count = HopitalExamen.objects.filter(
+                examen=examen,
+                hopital_id__in=hopital_ids
+            ).delete()[0]
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} association(s) supprimée(s).",
+                    "examen": examen.nom,
+                    "total_hopitaux": HopitalExamen.objects.filter(examen=examen).count()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        else:
+            return Response(
+                {"error": "Action invalide. Utilisez 'add' ou 'remove'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ExamenMedicalBulkDeleteView(APIView):
+    """Delete multiple examens at once."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request):
+        examen_ids = request.data.get('ids', [])
+        
+        if not isinstance(examen_ids, list):
+            return Response(
+                {"error": "ids doit être une liste."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        examens_with_associations = []
+        examens_to_delete = []
+        
+        for examen_id in examen_ids:
+            try:
+                examen = ExamenMedical.objects.get(pk=examen_id)
+                if HopitalExamen.objects.filter(examen=examen).exists():
+                    examens_with_associations.append({
+                        'id': examen.id,
+                        'nom': examen.nom,
+                        'hopitaux_count': HopitalExamen.objects.filter(examen=examen).count()
+                    })
+                else:
+                    examens_to_delete.append(examen)
+            except ExamenMedical.DoesNotExist:
+                continue
+        
+        force = request.data.get('force', False)
+        
+        if force:
+            HopitalExamen.objects.filter(examen_id__in=examen_ids).delete()
+            deleted_count = ExamenMedical.objects.filter(id__in=examen_ids).delete()[0]
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} examen(s) supprimé(s) avec leurs associations.",
+                    "deleted": deleted_count
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            deleted_count = len(examens_to_delete)
+            for examen in examens_to_delete:
+                examen.delete()
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} examen(s) supprimé(s).",
+                    "deleted": deleted_count,
+                    "with_associations": examens_with_associations
+                },
+                status=status.HTTP_200_OK
+            )

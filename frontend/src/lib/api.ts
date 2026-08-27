@@ -97,3 +97,108 @@ export const authAPI = {
     confirmation: string;
   }) => api.post("/auth/profile/change-password/", data),
 };
+
+
+export interface Maladie {
+  id: number;
+  nom: string;
+  hopitaux_count?: number;
+}
+
+export interface ExamenMedical {
+  id: number;
+  nom: string;
+  hopitaux_count?: number;
+}
+
+export interface PlateauTechnique {
+  id: number;
+  nom: string;
+  hopitaux_count?: number;
+}
+
+export interface Hopital {
+  id: number;
+  nom: string;
+  adresse: string;
+  type_hopital?: {
+    id: number;
+    nom: string;
+  };
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: T[];
+}
+
+export const maladieAPI = {
+  getAll: () => api.get<Maladie[]>("/maladies/"),
+  getOne: (id: number) => api.get<Maladie>(`/maladies/${id}/`),
+  create: (data: { nom: string }) => api.post<Maladie>("/maladies/", data),
+  update: (id: number, data: { nom: string }) => api.put<Maladie>(`/maladies/${id}/`, data),
+  delete: (id: number) => api.delete(`/maladies/${id}/`),
+  importExcel: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/maladies/import/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  exportExcel: () => api.get("/maladies/export-all/", { responseType: "blob" }),
+  associateHopitaux: (id: number, data: { hopital_ids: number[]; action: "add" | "remove" }) =>
+    api.post(`/maladies/${id}/associate-hopitaux/`, data),
+  bulkDelete: (data: { ids: number[]; force?: boolean }) =>
+    api.post("/maladies/bulk-delete/", data),
+};
+
+export const examenAPI = {
+  getAll: () => api.get<ExamenMedical[]>("/examens/"),
+  getOne: (id: number) => api.get<ExamenMedical>(`/examens/${id}/`),
+  create: (data: { nom: string }) => api.post<ExamenMedical>("/examens/", data),
+  update: (id: number, data: { nom: string }) => api.put<ExamenMedical>(`/examens/${id}/`, data),
+  delete: (id: number) => api.delete(`/examens/${id}/`),
+  importExcel: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/examens/import/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  exportExcel: () => api.get("/examens/export-all/", { responseType: "blob" }),
+  associateHopitaux: (id: number, data: { hopital_ids: number[]; action: "add" | "remove" }) =>
+    api.post(`/examens/${id}/associate-hopitaux/`, data),
+  bulkDelete: (data: { ids: number[]; force?: boolean }) =>
+    api.post("/examens/bulk-delete/", data),
+};
+
+export const plateauAPI = {
+  getAll: () => api.get<PlateauTechnique[]>("/plateau-technique/"),
+  getOne: (id: number) => api.get<PlateauTechnique>(`/plateau-technique/${id}/`),
+  create: (data: { nom: string }) => api.post<PlateauTechnique>("/plateau-technique/", data),
+  update: (id: number, data: { nom: string }) =>
+    api.put<PlateauTechnique>(`/plateau-technique/${id}/`, data),
+  delete: (id: number) => api.delete(`/plateau-technique/${id}/`),
+  importExcel: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post("/plateau-technique/import/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  exportExcel: () => api.get("/plateau-technique/export-all/", { responseType: "blob" }),
+  associateHopitaux: (id: number, data: { hopital_ids: number[]; action: "add" | "remove" }) =>
+    api.post(`/plateau-technique/${id}/associate-hopitaux/`, data),
+  bulkDelete: (data: { ids: number[]; force?: boolean }) =>
+    api.post("/plateau-technique/bulk-delete/", data),
+};
+
+
+export const hopitalAPI = {
+  getAll: (params?: { search?: string; page?: number; page_size?: number }) =>
+    api.get<PaginatedResponse<Hopital>>("/hopitaux/", { params }),
+  getOne: (id: number) => api.get<Hopital>(`/hopitaux/${id}/`),
+};

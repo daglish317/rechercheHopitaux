@@ -24,10 +24,15 @@ interface PendingItem {
   nom: string;
   isNew: boolean;
   tempId: string;
+  isChecked?: boolean;
 }
 
 export default function MaladiesPage() {
   const [view, setView] = useState<ViewMode>("list");
+  const [showReferentiel, setShowReferentiel] = useState(false);
+  const [newMaladieName, setNewMaladieName] = useState("");
+  const [addingMaladie, setAddingMaladie] = useState(false);
+  const [referentielError, setReferentielError] = useState("");
 
   const [hopitaux, setHopitaux] = useState<HopitalLight[]>([]);
   const [hopitauxLoading, setHopitauxLoading] = useState(true);
@@ -105,20 +110,25 @@ export default function MaladiesPage() {
     setAssociationsLoading(true);
     setSaveSuccess(false);
     setSaveError("");
-    setPendingItems([]);
     setView("manage");
+    
     try {
-      const [assocRes] = await Promise.all([
+      const [assocRes, catalogueRes] = await Promise.all([
         maladieAPI.getAssociations(hopital.id),
-        fetchMaladiesCatalogue(),
+        maladieAPI.getAll(),
       ]);
+      
       if (mountedRef.current) {
-        const existing = assocRes.data.maladies;
-        const items: PendingItem[] = existing.map((a) => ({
-          id: a.maladie,
-          nom: a.maladie_nom,
+        setAllMaladies(catalogueRes.data);
+        const existingIds = assocRes.data.maladies.map((a: any) => a.maladie);
+        
+        // Créer la liste avec l'état coché/non coché
+        const items: PendingItem[] = catalogueRes.data.map((maladie: Maladie) => ({
+          id: maladie.id,
+          nom: maladie.nom,
           isNew: false,
-          tempId: `existing-${a.maladie}`,
+          tempId: `maladie-${maladie.id}`,
+          isChecked: existingIds.includes(maladie.id),
         }));
         setPendingItems(items);
       }
@@ -172,70 +182,32 @@ export default function MaladiesPage() {
     ));
   };
 
+  const handleToggleCheckbox = (tempId: string) => {
+    setPendingItems(pendingItems.map((item) => 
+      item.tempId === tempId ? { ...item, isChecked: !item.isChecked } : item
+    ));
+  };
+
   const handleSave = async () => {
     if (!selectedHopital) return;
-    
-    const emptyItems = pendingItems.filter(item => !item.nom.trim());
-    if (emptyItems.length > 0) {
-      setSaveError("Veuillez remplir tous les champs ou les supprimer.");
-      return;
-    }
-
-    const names = pendingItems.map(item => item.nom.toLowerCase());
-    const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
-    if (duplicates.length > 0) {
-      setSaveError("Certaines maladies sont en double. Veuillez les supprimer.");
-      return;
-    }
 
     setSaving(true);
     setSaveError("");
     setSaveSuccess(false);
     
     try {
-      const newItems = pendingItems.filter(item => item.isNew && item.nom.trim());
-      const createdMaladies: Maladie[] = [];
-      
-      for (const item of newItems) {
-        try {
-          const response = await maladieAPI.create({ nom: item.nom.trim() });
-          createdMaladies.push(response.data);
-        } catch (err: any) {
-          if (err.response?.status === 400) {
-            const existing = allMaladies.find(m => m.nom.toLowerCase() === item.nom.toLowerCase());
-            if (existing) {
-              createdMaladies.push(existing);
-            } else {
-              throw err;
-            }
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      const existingIds = pendingItems
-        .filter(item => !item.isNew && item.id)
+      const selectedIds = pendingItems
+        .filter(item => item.isChecked && item.id)
         .map(item => item.id!);
-      
-      const newIds = createdMaladies.map(m => m.id);
-      const allIds = [...existingIds, ...newIds];
 
-      await maladieAPI.bulkSetAssociations(selectedHopital.id, allIds);
+      await maladieAPI.bulkSetAssociations(selectedHopital.id, selectedIds);
       
       if (mountedRef.current) {
         setSaveSuccess(true);
-        await fetchMaladiesCatalogue();
+        // Recharger pour avoir les données à jour
         const res = await maladieAPI.getAssociations(selectedHopital.id);
         if (mountedRef.current) {
           setDetailData(res.data);
-          const items: PendingItem[] = res.data.maladies.map((a) => ({
-            id: a.maladie,
-            nom: a.maladie_nom,
-            isNew: false,
-            tempId: `existing-${a.maladie}`,
-          }));
-          setPendingItems(items);
         }
       }
     } catch (err: unknown) {
@@ -326,6 +298,38 @@ export default function MaladiesPage() {
     }
   };
 
+  const handleAddMaladieToReferentiel = async () => {
+    if (!newMaladieName.trim()) return;
+    
+    setAddingMaladie(true);
+    setReferentielError("");
+    
+    try {
+      await maladieAPI.create({ nom: newMaladieName.trim() });
+      setNewMaladieName("");
+      await fetchMaladiesCatalogue();
+    } catch (err: any) {
+      if (err.response?.status === 400) {
+        setReferentielError("Cette maladie existe déjà.");
+      } else {
+        setReferentielError("Erreur lors de l'ajout de la maladie.");
+      }
+    } finally {
+      setAddingMaladie(false);
+    }
+  };
+
+  const handleDeleteMaladie = async (id: number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette maladie ?")) return;
+    
+    try {
+      await maladieAPI.delete(id);
+      await fetchMaladiesCatalogue();
+    } catch (err: any) {
+      setReferentielError(err.response?.data?.error || "Erreur lors de la suppression.");
+    }
+  };
+
   const inputClass =
     "w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-colors";
 
@@ -338,6 +342,89 @@ export default function MaladiesPage() {
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Gestion des maladies prises en charge par hôpital
             </p>
+          </div>
+
+          {/* Section Référentiel */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+            <button
+              onClick={() => {
+                setShowReferentiel(!showReferentiel);
+                if (!showReferentiel) fetchMaladiesCatalogue();
+              }}
+              className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+            >
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Référentiel des maladies
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Gérer la liste complète des maladies disponibles
+                </p>
+              </div>
+              <ChevronLeftIcon 
+                className={`w-5 h-5 text-slate-400 transition-transform ${showReferentiel ? 'rotate-90' : '-rotate-90'}`}
+              />
+            </button>
+
+            {showReferentiel && (
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+                {referentielError && (
+                  <div className="mb-4 flex items-start gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
+                    <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                    <span className="flex-1">{referentielError}</span>
+                    <button onClick={() => setReferentielError("")}>
+                      <XIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Ajouter une maladie */}
+                <div className="mb-4 flex gap-3">
+                  <input
+                    type="text"
+                    value={newMaladieName}
+                    onChange={(e) => setNewMaladieName(e.target.value)}
+                    placeholder="Nouvelle maladie..."
+                    className={inputClass}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddMaladieToReferentiel()}
+                  />
+                  <button
+                    onClick={handleAddMaladieToReferentiel}
+                    disabled={addingMaladie || !newMaladieName.trim()}
+                    className="shrink-0 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                  >
+                    {addingMaladie ? "..." : "Ajouter"}
+                  </button>
+                </div>
+
+                {/* Liste des maladies */}
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {allMaladies.length === 0 ? (
+                    <p className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                      Aucune maladie dans le référentiel
+                    </p>
+                  ) : (
+                    allMaladies.map((maladie) => (
+                      <div
+                        key={maladie.id}
+                        className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
+                      >
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {maladie.nom}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteMaladie(maladie.id)}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 rounded transition-colors"
+                          title="Supprimer"
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {hopitauxError && (
@@ -453,7 +540,7 @@ export default function MaladiesPage() {
               {selectedHopital.nom}
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Ajoutez les maladies prises en charge par cet hôpital. Vous pouvez en ajouter plusieurs avant d&apos;enregistrer.
+              Cochez les maladies prises en charge par cet hôpital, puis enregistrez vos sélections.
             </p>
           </div>
 
@@ -476,24 +563,8 @@ export default function MaladiesPage() {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Maladies prises en charge
+                Maladies disponibles
               </h2>
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <button
-                  onClick={handleImportExcel}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <UploadIcon className="w-4 h-4" />
-                  Importer Excel
-                </button>
-              </div>
             </div>
 
             {associationsLoading ? (
@@ -502,39 +573,28 @@ export default function MaladiesPage() {
               <>
                 {pendingItems.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
-                    Aucune maladie n&apos;est actuellement associée à cet hôpital.
+                    Aucune maladie disponible dans le référentiel.
                   </div>
                 ) : (
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
                     {pendingItems.map((item) => (
-                      <div key={item.tempId} className="flex items-center gap-3">
+                      <label
+                        key={item.tempId}
+                        className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-colors"
+                      >
                         <input
-                          type="text"
-                          value={item.nom}
-                          onChange={(e) => handleItemChange(item.tempId, e.target.value)}
-                          placeholder="Nom de la maladie"
-                          className={inputClass}
-                          readOnly={!item.isNew}
+                          type="checkbox"
+                          checked={item.isChecked || false}
+                          onChange={() => handleToggleCheckbox(item.tempId)}
+                          className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                         />
-                        <button
-                          onClick={() => handleRemoveItem(item.tempId)}
-                          className="shrink-0 p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          aria-label="Retirer"
-                        >
-                          <XIcon className="w-5 h-5" />
-                        </button>
-                      </div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
+                          {item.nom}
+                        </span>
+                      </label>
                     ))}
                   </div>
                 )}
-
-                <button
-                  onClick={handleAddItem}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-6"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                  + Ajouter une maladie
-                </button>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <button
@@ -542,16 +602,11 @@ export default function MaladiesPage() {
                     disabled={saving}
                     className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {saving ? "Enregistrement..." : "Enregistrer"}
+                    {saving ? "Enregistrement..." : "Enregistrer les sélections"}
                   </button>
-                  <button
-                    onClick={handleExportExcel}
-                    disabled={pendingItems.length === 0}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-                  >
-                    <DownloadIcon className="w-4 h-4" />
-                    Exporter Excel
-                  </button>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {pendingItems.filter(item => item.isChecked).length} maladie(s) sélectionnée(s)
+                  </span>
                 </div>
               </>
             )}

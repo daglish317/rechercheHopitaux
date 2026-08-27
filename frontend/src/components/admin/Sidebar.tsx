@@ -29,6 +29,12 @@ const menuItems = [
   { label: "Parametres", href: "/admin/parametres", icon: SettingsIcon },
 ];
 
+const referentielItems = [
+  { label: "📚 Maladies (Nouveau)", href: "/admin/referentiels/maladies", icon: VirusIcon },
+  { label: "📚 Examens (Nouveau)", href: "/admin/referentiels/examens", icon: MicroscopeIcon },
+  { label: "📚 Plateaux (Nouveau)", href: "/admin/referentiels/plateaux", icon: CogIcon },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout, user } = useAuth();
@@ -77,7 +83,7 @@ export default function Sidebar() {
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-          <ul className="space-y-1">
+          <ul className="space-y-1 mt-4">
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -99,6 +105,35 @@ export default function Sidebar() {
               );
             })}
           </ul>
+
+          {/* Section Référentiels */}
+          <div className="mt-6">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Référentiels
+            </p>
+            <ul className="space-y-1">
+              {referentielItems.map((item) => {
+                const isActive = pathname?.startsWith(item.href);
+                const Icon = item.icon;
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                        isActive
+                          ? "bg-teal-500 text-white shadow-lg shadow-teal-950/30"
+                          : "text-slate-700 hover:bg-teal-50 hover:text-teal-700"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </nav>
 
         <div className="border-t border-slate-200 p-4">

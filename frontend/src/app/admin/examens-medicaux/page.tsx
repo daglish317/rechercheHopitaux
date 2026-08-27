@@ -24,6 +24,7 @@ interface PendingItem {
   nom: string;
   isNew: boolean;
   tempId: string;
+  isChecked?: boolean;
 }
 
 export default function ExamensMedicauxPage() {
@@ -105,20 +106,25 @@ export default function ExamensMedicauxPage() {
     setAssociationsLoading(true);
     setSaveSuccess(false);
     setSaveError("");
-    setPendingItems([]);
     setView("manage");
+    
     try {
-      const [assocRes] = await Promise.all([
+      const [assocRes, catalogueRes] = await Promise.all([
         examenAPI.getAssociations(hopital.id),
-        fetchExamensCatalogue(),
+        examenAPI.getAll(),
       ]);
+      
       if (mountedRef.current) {
-        const existing = assocRes.data.examens;
-        const items: PendingItem[] = existing.map((a) => ({
-          id: a.examen,
-          nom: a.examen_nom,
+        setAllExamens(catalogueRes.data);
+        const existingIds = assocRes.data.examens.map((a: any) => a.examen);
+        
+        // Créer la liste avec l'état coché/non coché
+        const items: PendingItem[] = catalogueRes.data.map((examen: ExamenMedical) => ({
+          id: examen.id,
+          nom: examen.nom,
           isNew: false,
-          tempId: `existing-${a.examen}`,
+          tempId: `examen-${examen.id}`,
+          isChecked: existingIds.includes(examen.id),
         }));
         setPendingItems(items);
       }
@@ -172,70 +178,32 @@ export default function ExamensMedicauxPage() {
     ));
   };
 
+  const handleToggleCheckbox = (tempId: string) => {
+    setPendingItems(pendingItems.map((item) => 
+      item.tempId === tempId ? { ...item, isChecked: !item.isChecked } : item
+    ));
+  };
+
   const handleSave = async () => {
     if (!selectedHopital) return;
-    
-    const emptyItems = pendingItems.filter(item => !item.nom.trim());
-    if (emptyItems.length > 0) {
-      setSaveError("Veuillez remplir tous les champs ou les supprimer.");
-      return;
-    }
-
-    const names = pendingItems.map(item => item.nom.toLowerCase());
-    const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
-    if (duplicates.length > 0) {
-      setSaveError("Certains examens sont en double. Veuillez les supprimer.");
-      return;
-    }
 
     setSaving(true);
     setSaveError("");
     setSaveSuccess(false);
     
     try {
-      const newItems = pendingItems.filter(item => item.isNew && item.nom.trim());
-      const createdExamens: ExamenMedical[] = [];
-      
-      for (const item of newItems) {
-        try {
-          const response = await examenAPI.create({ nom: item.nom.trim() });
-          createdExamens.push(response.data);
-        } catch (err: any) {
-          if (err.response?.status === 400) {
-            const existing = allExamens.find(e => e.nom.toLowerCase() === item.nom.toLowerCase());
-            if (existing) {
-              createdExamens.push(existing);
-            } else {
-              throw err;
-            }
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      const existingIds = pendingItems
-        .filter(item => !item.isNew && item.id)
+      const selectedIds = pendingItems
+        .filter(item => item.isChecked && item.id)
         .map(item => item.id!);
-      
-      const newIds = createdExamens.map(e => e.id);
-      const allIds = [...existingIds, ...newIds];
 
-      await examenAPI.bulkSetAssociations(selectedHopital.id, allIds);
+      await examenAPI.bulkSetAssociations(selectedHopital.id, selectedIds);
       
       if (mountedRef.current) {
         setSaveSuccess(true);
-        await fetchExamensCatalogue();
+        // Recharger pour avoir les données à jour
         const res = await examenAPI.getAssociations(selectedHopital.id);
         if (mountedRef.current) {
           setDetailData(res.data);
-          const items: PendingItem[] = res.data.examens.map((a) => ({
-            id: a.examen,
-            nom: a.examen_nom,
-            isNew: false,
-            tempId: `existing-${a.examen}`,
-          }));
-          setPendingItems(items);
         }
       }
     } catch (err: unknown) {
@@ -453,7 +421,7 @@ export default function ExamensMedicauxPage() {
               {selectedHopital.nom}
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Ajoutez les examens médicaux disponibles dans cet hôpital. Vous pouvez en ajouter plusieurs avant d&apos;enregistrer.
+              Cochez les examens médicaux disponibles dans cet hôpital, puis enregistrez vos sélections.
             </p>
           </div>
 
@@ -476,24 +444,8 @@ export default function ExamensMedicauxPage() {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Examens médicaux disponibles
+                Examens disponibles
               </h2>
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <button
-                  onClick={handleImportExcel}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <UploadIcon className="w-4 h-4" />
-                  Importer Excel
-                </button>
-              </div>
             </div>
 
             {associationsLoading ? (
@@ -502,39 +454,28 @@ export default function ExamensMedicauxPage() {
               <>
                 {pendingItems.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
-                    Aucun examen médical n&apos;est actuellement associé à cet hôpital.
+                    Aucun examen disponible dans le référentiel.
                   </div>
                 ) : (
-                  <div className="space-y-3 mb-6">
+                  <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
                     {pendingItems.map((item) => (
-                      <div key={item.tempId} className="flex items-center gap-3">
+                      <label
+                        key={item.tempId}
+                        className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-colors"
+                      >
                         <input
-                          type="text"
-                          value={item.nom}
-                          onChange={(e) => handleItemChange(item.tempId, e.target.value)}
-                          placeholder="Nom de l'examen médical"
-                          className={inputClass}
-                          readOnly={!item.isNew}
+                          type="checkbox"
+                          checked={item.isChecked || false}
+                          onChange={() => handleToggleCheckbox(item.tempId)}
+                          className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                         />
-                        <button
-                          onClick={() => handleRemoveItem(item.tempId)}
-                          className="shrink-0 p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          aria-label="Retirer"
-                        >
-                          <XIcon className="w-5 h-5" />
-                        </button>
-                      </div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
+                          {item.nom}
+                        </span>
+                      </label>
                     ))}
                   </div>
                 )}
-
-                <button
-                  onClick={handleAddItem}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-6"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                  + Ajouter un examen médical
-                </button>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <button
@@ -542,16 +483,11 @@ export default function ExamensMedicauxPage() {
                     disabled={saving}
                     className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {saving ? "Enregistrement..." : "Enregistrer"}
+                    {saving ? "Enregistrement..." : "Enregistrer les sélections"}
                   </button>
-                  <button
-                    onClick={handleExportExcel}
-                    disabled={pendingItems.length === 0}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-                  >
-                    <DownloadIcon className="w-4 h-4" />
-                    Exporter Excel
-                  </button>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {pendingItems.filter(item => item.isChecked).length} examen(s) sélectionné(s)
+                  </span>
                 </div>
               </>
             )}

@@ -229,3 +229,273 @@ class PriseEnChargeExportExcelView(APIView):
             f'attachment; filename="maladies_{hopital.nom.replace(" ", "_")}.xlsx"'
         )
         return response
+
+
+class MaladieAssociatedHopitauxView(APIView):
+    """List all hospitals associated with a specific maladie."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def get(self, request, maladie_id):
+        maladie = get_object_or_404(Maladie, pk=maladie_id)
+        associations = PriseEnCharge.objects.filter(maladie=maladie).select_related('hopital')
+        
+        hopitaux_data = []
+        for assoc in associations:
+            hopitaux_data.append({
+                'id': assoc.id,
+                'hopital': assoc.hopital.id,
+                'hopital_nom': assoc.hopital.nom,
+                'hopital_adresse': assoc.hopital.adresse,
+            })
+        
+        return Response(
+            {
+                "maladie": MaladieSerializer(maladie).data,
+                "hopitaux": hopitaux_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class MaladieImportExcelView(APIView):
+    """Import maladies from Excel file (nom only)."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request):
+        if 'file' not in request.FILES:
+            return Response(
+                {"error": "Aucun fichier fourni."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        file = request.FILES['file']
+        
+        if not file.name.endswith(('.xlsx', '.xls', '.csv')):
+            return Response(
+                {"error": "Format de fichier non supporté. Utilisez .xlsx, .xls ou .csv"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            import openpyxl
+            import pandas as pd
+            
+            # Lire le fichier selon le format
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+            
+            # Vérifier que la colonne 'nom' existe
+            if 'nom' not in df.columns and 'Nom' not in df.columns:
+                return Response(
+                    {"error": "Le fichier doit contenir une colonne 'nom' ou 'Nom'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Normaliser le nom de la colonne
+            nom_column = 'Nom' if 'Nom' in df.columns else 'nom'
+            
+            created = 0
+            skipped = 0
+            errors = []
+            
+            for index, row in df.iterrows():
+                nom = str(row[nom_column]).strip()
+                
+                if not nom or nom.lower() == 'nan':
+                    skipped += 1
+                    continue
+                
+                # Créer ou ignorer si existe déjà
+                _, created_flag = Maladie.objects.get_or_create(nom=nom)
+                
+                if created_flag:
+                    created += 1
+                else:
+                    skipped += 1
+            
+            return Response(
+                {
+                    "message": f"Import terminé avec succès.",
+                    "created": created,
+                    "skipped": skipped,
+                    "errors": errors
+                },
+                status=status.HTTP_201_CREATED
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Erreur lors de l'import: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class MaladieExportExcelView(APIView):
+    """Export all maladies to Excel."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def get(self, request):
+        import openpyxl
+        
+        maladies = Maladie.objects.all().order_by('nom')
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Maladies"
+        
+        # En-têtes
+        ws.append(["Nom", "Nombre d'hôpitaux"])
+        
+        # Données
+        for maladie in maladies:
+            hopital_count = PriseEnCharge.objects.filter(maladie=maladie).count()
+            ws.append([maladie.nom, hopital_count])
+        
+        # Ajuster la largeur des colonnes
+        ws.column_dimensions['A'].width = 40
+        ws.column_dimensions['B'].width = 20
+        
+        # Sauvegarder dans un buffer
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response['Content-Disposition'] = 'attachment; filename="maladies_export.xlsx"'
+        return response
+
+
+class MaladieAssociateHopitauxView(APIView):
+    """Associate a maladie to multiple hopitaux."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request, pk):
+        maladie = get_object_or_404(Maladie, pk=pk)
+        
+        hopital_ids = request.data.get('hopital_ids', [])
+        action = request.data.get('action', 'add')  # 'add' or 'remove'
+        
+        if not isinstance(hopital_ids, list):
+            return Response(
+                {"error": "hopital_ids doit être une liste."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if action == 'add':
+            # Ajouter les associations
+            created_count = 0
+            for hopital_id in hopital_ids:
+                try:
+                    hopital = Hopital.objects.get(pk=hopital_id)
+                    _, created = PriseEnCharge.objects.get_or_create(
+                        hopital=hopital,
+                        maladie=maladie
+                    )
+                    if created:
+                        created_count += 1
+                except Hopital.DoesNotExist:
+                    continue
+            
+            return Response(
+                {
+                    "message": f"{created_count} nouvelle(s) association(s) créée(s).",
+                    "maladie": maladie.nom,
+                    "total_hopitaux": PriseEnCharge.objects.filter(maladie=maladie).count()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        elif action == 'remove':
+            # Supprimer les associations
+            deleted_count = PriseEnCharge.objects.filter(
+                maladie=maladie,
+                hopital_id__in=hopital_ids
+            ).delete()[0]
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} association(s) supprimée(s).",
+                    "maladie": maladie.nom,
+                    "total_hopitaux": PriseEnCharge.objects.filter(maladie=maladie).count()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        else:
+            return Response(
+                {"error": "Action invalide. Utilisez 'add' ou 'remove'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class MaladieBulkDeleteView(APIView):
+    """Delete multiple maladies at once."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request):
+        maladie_ids = request.data.get('ids', [])
+        
+        if not isinstance(maladie_ids, list):
+            return Response(
+                {"error": "ids doit être une liste."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Vérifier les maladies qui ont des associations
+        maladies_with_associations = []
+        maladies_to_delete = []
+        
+        for maladie_id in maladie_ids:
+            try:
+                maladie = Maladie.objects.get(pk=maladie_id)
+                if PriseEnCharge.objects.filter(maladie=maladie).exists():
+                    maladies_with_associations.append({
+                        'id': maladie.id,
+                        'nom': maladie.nom,
+                        'hopitaux_count': PriseEnCharge.objects.filter(maladie=maladie).count()
+                    })
+                else:
+                    maladies_to_delete.append(maladie)
+            except Maladie.DoesNotExist:
+                continue
+        
+        # Option pour forcer la suppression
+        force = request.data.get('force', False)
+        
+        if force:
+            # Supprimer toutes les associations d'abord
+            PriseEnCharge.objects.filter(maladie_id__in=maladie_ids).delete()
+            # Puis supprimer les maladies
+            deleted_count = Maladie.objects.filter(id__in=maladie_ids).delete()[0]
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} maladie(s) supprimée(s) avec leurs associations.",
+                    "deleted": deleted_count
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Supprimer uniquement les maladies sans associations
+            deleted_count = len(maladies_to_delete)
+            for maladie in maladies_to_delete:
+                maladie.delete()
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} maladie(s) supprimée(s).",
+                    "deleted": deleted_count,
+                    "with_associations": maladies_with_associations
+                },
+                status=status.HTTP_200_OK
+            )

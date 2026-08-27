@@ -234,3 +234,256 @@ class HopitalPlateauTechniqueExportExcelView(APIView):
             f'attachment; filename="plateau_technique_{hopital.nom.replace(" ", "_")}.xlsx"'
         )
         return response
+
+
+class PlateauTechniqueAssociatedHopitauxView(APIView):
+    """List all hospitals associated with a specific plateau technique."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def get(self, request, plateau_id):
+        plateau = get_object_or_404(PlateauTechnique, pk=plateau_id)
+        associations = HopitalPlateauTechnique.objects.filter(plateau_technique=plateau).select_related('hopital')
+        
+        hopitaux_data = []
+        for assoc in associations:
+            hopitaux_data.append({
+                'id': assoc.id,
+                'hopital': assoc.hopital.id,
+                'hopital_nom': assoc.hopital.nom,
+                'hopital_adresse': assoc.hopital.adresse,
+            })
+        
+        return Response(
+            {
+                "plateau": PlateauTechniqueSerializer(plateau).data,
+                "hopitaux": hopitaux_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PlateauTechniqueImportExcelView(APIView):
+    """Import plateaux techniques from Excel file (nom only)."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request):
+        if 'file' not in request.FILES:
+            return Response(
+                {"error": "Aucun fichier fourni."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        file = request.FILES['file']
+        
+        if not file.name.endswith(('.xlsx', '.xls', '.csv')):
+            return Response(
+                {"error": "Format de fichier non supporté. Utilisez .xlsx, .xls ou .csv"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            import openpyxl
+            import pandas as pd
+            
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+            
+            if 'nom' not in df.columns and 'Nom' not in df.columns:
+                return Response(
+                    {"error": "Le fichier doit contenir une colonne 'nom' ou 'Nom'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            nom_column = 'Nom' if 'Nom' in df.columns else 'nom'
+            
+            created = 0
+            skipped = 0
+            
+            for index, row in df.iterrows():
+                nom = str(row[nom_column]).strip()
+                
+                if not nom or nom.lower() == 'nan':
+                    skipped += 1
+                    continue
+                
+                _, created_flag = PlateauTechnique.objects.get_or_create(nom=nom)
+                
+                if created_flag:
+                    created += 1
+                else:
+                    skipped += 1
+            
+            return Response(
+                {
+                    "message": f"Import terminé avec succès.",
+                    "created": created,
+                    "skipped": skipped
+                },
+                status=status.HTTP_201_CREATED
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Erreur lors de l'import: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class PlateauTechniqueExportExcelView(APIView):
+    """Export all plateaux techniques to Excel."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def get(self, request):
+        import openpyxl
+        
+        plateaux = PlateauTechnique.objects.all().order_by('nom')
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Plateaux Techniques"
+        
+        ws.append(["Nom", "Nombre d'hôpitaux"])
+        
+        for plateau in plateaux:
+            hopital_count = HopitalPlateauTechnique.objects.filter(plateau_technique=plateau).count()
+            ws.append([plateau.nom, hopital_count])
+        
+        ws.column_dimensions['A'].width = 40
+        ws.column_dimensions['B'].width = 20
+        
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response['Content-Disposition'] = 'attachment; filename="plateaux_techniques_export.xlsx"'
+        return response
+
+
+class PlateauTechniqueAssociateHopitauxView(APIView):
+    """Associate a plateau technique to multiple hopitaux."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request, pk):
+        plateau = get_object_or_404(PlateauTechnique, pk=pk)
+        
+        hopital_ids = request.data.get('hopital_ids', [])
+        action = request.data.get('action', 'add')
+        
+        if not isinstance(hopital_ids, list):
+            return Response(
+                {"error": "hopital_ids doit être une liste."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if action == 'add':
+            created_count = 0
+            for hopital_id in hopital_ids:
+                try:
+                    hopital = Hopital.objects.get(pk=hopital_id)
+                    _, created = HopitalPlateauTechnique.objects.get_or_create(
+                        hopital=hopital,
+                        plateau_technique=plateau
+                    )
+                    if created:
+                        created_count += 1
+                except Hopital.DoesNotExist:
+                    continue
+            
+            return Response(
+                {
+                    "message": f"{created_count} nouvelle(s) association(s) créée(s).",
+                    "plateau": plateau.nom,
+                    "total_hopitaux": HopitalPlateauTechnique.objects.filter(plateau_technique=plateau).count()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        elif action == 'remove':
+            deleted_count = HopitalPlateauTechnique.objects.filter(
+                plateau_technique=plateau,
+                hopital_id__in=hopital_ids
+            ).delete()[0]
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} association(s) supprimée(s).",
+                    "plateau": plateau.nom,
+                    "total_hopitaux": HopitalPlateauTechnique.objects.filter(plateau_technique=plateau).count()
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        else:
+            return Response(
+                {"error": "Action invalide. Utilisez 'add' ou 'remove'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class PlateauTechniqueBulkDeleteView(APIView):
+    """Delete multiple plateaux techniques at once."""
+    
+    permission_classes = [IsAdministrateur]
+
+    def post(self, request):
+        plateau_ids = request.data.get('ids', [])
+        
+        if not isinstance(plateau_ids, list):
+            return Response(
+                {"error": "ids doit être une liste."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        plateaux_with_associations = []
+        plateaux_to_delete = []
+        
+        for plateau_id in plateau_ids:
+            try:
+                plateau = PlateauTechnique.objects.get(pk=plateau_id)
+                if HopitalPlateauTechnique.objects.filter(plateau_technique=plateau).exists():
+                    plateaux_with_associations.append({
+                        'id': plateau.id,
+                        'nom': plateau.nom,
+                        'hopitaux_count': HopitalPlateauTechnique.objects.filter(plateau_technique=plateau).count()
+                    })
+                else:
+                    plateaux_to_delete.append(plateau)
+            except PlateauTechnique.DoesNotExist:
+                continue
+        
+        force = request.data.get('force', False)
+        
+        if force:
+            HopitalPlateauTechnique.objects.filter(plateau_technique_id__in=plateau_ids).delete()
+            deleted_count = PlateauTechnique.objects.filter(id__in=plateau_ids).delete()[0]
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} plateau(x) technique(s) supprimé(s) avec leurs associations.",
+                    "deleted": deleted_count
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            deleted_count = len(plateaux_to_delete)
+            for plateau in plateaux_to_delete:
+                plateau.delete()
+            
+            return Response(
+                {
+                    "message": f"{deleted_count} plateau(x) technique(s) supprimé(s).",
+                    "deleted": deleted_count,
+                    "with_associations": plateaux_with_associations
+                },
+                status=status.HTTP_200_OK
+            )

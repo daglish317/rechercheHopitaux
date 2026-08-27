@@ -8,6 +8,11 @@ from .views import (
     HopitalPlateauTechniqueListView,
     PlateauTechniqueDetailView,
     PlateauTechniqueListView,
+    PlateauTechniqueImportExcelView,
+    PlateauTechniqueExportExcelView,
+    PlateauTechniqueAssociateHopitauxView,
+    PlateauTechniqueBulkDeleteView,
+    PlateauTechniqueAssociatedHopitauxView,
 )
 
 urlpatterns = [
@@ -24,6 +29,11 @@ urlpatterns = [
         name="hopital-plateau-list",
     ),
     path(
+        "associations/plateau/<int:plateau_id>/",
+        PlateauTechniqueAssociatedHopitauxView.as_view(),
+        name="plateau-associated-hopitaux",
+    ),
+    path(
         "associations/<int:hopital_id>/bulk/",
         HopitalPlateauTechniqueBulkView.as_view(),
         name="hopital-plateau-bulk",
@@ -37,5 +47,26 @@ urlpatterns = [
         "export/<int:hopital_id>/",
         HopitalPlateauTechniqueExportExcelView.as_view(),
         name="hopital-plateau-export",
+    ),
+    # Nouvelles routes
+    path(
+        "import/",
+        PlateauTechniqueImportExcelView.as_view(),
+        name="plateau-import",
+    ),
+    path(
+        "export-all/",
+        PlateauTechniqueExportExcelView.as_view(),
+        name="plateau-export-all",
+    ),
+    path(
+        "<int:pk>/associate-hopitaux/",
+        PlateauTechniqueAssociateHopitauxView.as_view(),
+        name="plateau-associate-hopitaux",
+    ),
+    path(
+        "bulk-delete/",
+        PlateauTechniqueBulkDeleteView.as_view(),
+        name="plateau-bulk-delete",
     ),
 ]
