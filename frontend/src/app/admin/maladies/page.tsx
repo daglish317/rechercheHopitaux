@@ -188,6 +188,14 @@ export default function MaladiesPage() {
     ));
   };
 
+  const handleToggleAll = () => {
+    const allChecked = pendingItems.every(item => item.isChecked);
+    setPendingItems(pendingItems.map((item) => ({
+      ...item,
+      isChecked: !allChecked
+    })));
+  };
+
   const handleSave = async () => {
     if (!selectedHopital) return;
 
@@ -576,24 +584,39 @@ export default function MaladiesPage() {
                     Aucune maladie disponible dans le référentiel.
                   </div>
                 ) : (
-                  <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
-                    {pendingItems.map((item) => (
-                      <label
-                        key={item.tempId}
-                        className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={item.isChecked || false}
-                          onChange={() => handleToggleCheckbox(item.tempId)}
-                          className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                        />
-                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
-                          {item.nom}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    {/* Checkbox Tout sélectionner */}
+                    <label className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-700 cursor-pointer transition-colors mb-3">
+                      <input
+                        type="checkbox"
+                        checked={pendingItems.every(item => item.isChecked)}
+                        onChange={handleToggleAll}
+                        className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                      />
+                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                        Tout sélectionner / Tout désélectionner
+                      </span>
+                    </label>
+
+                    <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+                      {pendingItems.map((item) => (
+                        <label
+                          key={item.tempId}
+                          className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.isChecked || false}
+                            onChange={() => handleToggleCheckbox(item.tempId)}
+                            className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                          />
+                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex-1">
+                            {item.nom}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
                 )}
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
