@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SimpleHeader from "@/components/SimpleHeader";
 import { publicAPI, HopitalDetail } from "@/lib/public";
@@ -9,7 +9,10 @@ import {
   PhoneIcon,
   HospitalIcon,
   ArrowLeftIcon,
+  SearchIcon,
 } from "@/components/Icons";
+
+type FilterType = "all" | "maladies" | "examens" | "plateaux";
 
 export default function HopitalDetailPage() {
   const params = useParams();
@@ -17,6 +20,8 @@ export default function HopitalDetailPage() {
   const [hopital, setHopital] = useState<HopitalDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
   const id = params?.id ? Number(params.id) : null;
 
@@ -45,6 +50,33 @@ export default function HopitalDetailPage() {
     };
     load();
   }, [fetchHopital]);
+
+  // Filtrage des données
+  const filteredData = useMemo(() => {
+    if (!hopital) return { maladies: [], examens: [], plateaux: [] };
+
+    const query = searchQuery.toLowerCase().trim();
+
+    const filterItems = (items: string[]) => {
+      if (!query) return items;
+      return items.filter(item => item.toLowerCase().includes(query));
+    };
+
+    return {
+      maladies: filterItems(hopital.maladies),
+      examens: filterItems(hopital.examens),
+      plateaux: filterItems(hopital.plateaux_techniques),
+    };
+  }, [hopital, searchQuery]);
+
+  // Compter les résultats
+  const resultCount = useMemo(() => {
+    let count = 0;
+    if (activeFilter === "all" || activeFilter === "maladies") count += filteredData.maladies.length;
+    if (activeFilter === "all" || activeFilter === "examens") count += filteredData.examens.length;
+    if (activeFilter === "all" || activeFilter === "plateaux") count += filteredData.plateaux.length;
+    return count;
+  }, [filteredData, activeFilter]);
 
   if (loading) {
     return (
@@ -200,8 +232,92 @@ export default function HopitalDetailPage() {
             </div>
           </div>
 
+          {/* Barre de recherche et filtres */}
+          {(hopital.maladies.length > 0 || hopital.examens.length > 0 || hopital.plateaux_techniques.length > 0) && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 md:p-6 mb-6 shadow-sm">
+              {/* Barre de recherche */}
+              <div className="relative mb-4">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher une maladie, un examen ou un équipement..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Filtres */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={() => setActiveFilter("all")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeFilter === "all"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  Tout ({hopital.maladies.length + hopital.examens.length + hopital.plateaux_techniques.length})
+                </button>
+                {hopital.maladies.length > 0 && (
+                  <button
+                    onClick={() => setActiveFilter("maladies")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeFilter === "maladies"
+                        ? "bg-red-600 text-white"
+                        : "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50"
+                    }`}
+                  >
+                    Maladies ({hopital.maladies.length})
+                  </button>
+                )}
+                {hopital.examens.length > 0 && (
+                  <button
+                    onClick={() => setActiveFilter("examens")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeFilter === "examens"
+                        ? "bg-blue-600 text-white"
+                        : "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/50"
+                    }`}
+                  >
+                    Examens ({hopital.examens.length})
+                  </button>
+                )}
+                {hopital.plateaux_techniques.length > 0 && (
+                  <button
+                    onClick={() => setActiveFilter("plateaux")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeFilter === "plateaux"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
+                    }`}
+                  >
+                    Plateaux techniques ({hopital.plateaux_techniques.length})
+                  </button>
+                )}
+              </div>
+
+              {/* Compteur de résultats */}
+              {searchQuery && (
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <strong>{resultCount}</strong> résultat{resultCount > 1 ? "s" : ""} trouvé{resultCount > 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Maladies prises en charge */}
-          {hopital.maladies.length > 0 && (
+          {(activeFilter === "all" || activeFilter === "maladies") && filteredData.maladies.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -214,12 +330,13 @@ export default function HopitalDetailPage() {
                     Maladies prises en charge
                   </h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {hopital.maladies.length} maladie{hopital.maladies.length > 1 ? "s" : ""}
+                    {filteredData.maladies.length} maladie{filteredData.maladies.length > 1 ? "s" : ""}
+                    {searchQuery && ` trouvée${filteredData.maladies.length > 1 ? "s" : ""}`}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {hopital.maladies.map((maladie, index) => (
+                {filteredData.maladies.map((maladie, index) => (
                   <span
                     key={index}
                     className="inline-block px-3 py-1.5 text-sm bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-lg font-medium"
@@ -232,7 +349,7 @@ export default function HopitalDetailPage() {
           )}
 
           {/* Examens médicaux */}
-          {hopital.examens.length > 0 && (
+          {(activeFilter === "all" || activeFilter === "examens") && filteredData.examens.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -245,12 +362,13 @@ export default function HopitalDetailPage() {
                     Examens médicaux disponibles
                   </h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {hopital.examens.length} examen{hopital.examens.length > 1 ? "s" : ""}
+                    {filteredData.examens.length} examen{filteredData.examens.length > 1 ? "s" : ""}
+                    {searchQuery && ` trouvé${filteredData.examens.length > 1 ? "s" : ""}`}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {hopital.examens.map((examen, index) => (
+                {filteredData.examens.map((examen, index) => (
                   <span
                     key={index}
                     className="inline-block px-3 py-1.5 text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-lg font-medium"
@@ -263,7 +381,7 @@ export default function HopitalDetailPage() {
           )}
 
           {/* Plateau technique */}
-          {hopital.plateaux_techniques.length > 0 && (
+          {(activeFilter === "all" || activeFilter === "plateaux") && filteredData.plateaux.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 mb-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -276,12 +394,13 @@ export default function HopitalDetailPage() {
                     Plateau technique
                   </h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {hopital.plateaux_techniques.length} équipement{hopital.plateaux_techniques.length > 1 ? "s" : ""}
+                    {filteredData.plateaux.length} équipement{filteredData.plateaux.length > 1 ? "s" : ""}
+                    {searchQuery && ` trouvé${filteredData.plateaux.length > 1 ? "s" : ""}`}
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {hopital.plateaux_techniques.map((plateau, index) => (
+                {filteredData.plateaux.map((plateau, index) => (
                   <span
                     key={index}
                     className="inline-block px-3 py-1.5 text-sm bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-medium"
@@ -290,6 +409,27 @@ export default function HopitalDetailPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Message si aucun résultat avec la recherche */}
+          {searchQuery && resultCount === 0 && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 text-center mb-6">
+              <svg className="w-12 h-12 text-amber-500 dark:text-amber-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p className="text-amber-800 dark:text-amber-300 font-medium mb-1">
+                Aucun résultat
+              </p>
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Aucun élément ne correspond à votre recherche &quot;{searchQuery}&quot;
+              </p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+              >
+                Réinitialiser la recherche
+              </button>
             </div>
           )}
 
